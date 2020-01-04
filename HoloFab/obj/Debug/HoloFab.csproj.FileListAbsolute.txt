@@ -1,0 +1,15 @@
+F:\HoloFabProject\HoloFab\HoloFab\obj\Debug\HoloFab.csprojAssemblyReference.cache
+F:\HoloFabProject\HoloFab\HoloFab\obj\Debug\HoloFab.csproj.CopyComplete
+F:\HoloFabProject\HoloFab\HoloFab\obj\Debug\HoloFab.dll
+F:\HoloFabProject\HoloFab\HoloFab\obj\Debug\HoloFab.pdb
+F:\HoloFabProject\HoloFab\HoloFab\obj\Debug\HoloFab.Properties.Resources.resources
+F:\HoloFabProject\HoloFab\HoloFab\obj\Debug\HoloFab.csproj.GenerateResource.cache
+F:\HoloFabProject\HoloFab\HoloFab\obj\Debug\HoloFab.csproj.CoreCompileInputs.cache
+C:\Users\Armin\AppData\Roaming\Grasshopper\Libraries\HoloFab.dll
+C:\Users\Armin\AppData\Roaming\Grasshopper\Libraries\HoloFab.pdb
+C:\Users\Armin\Desktop\HoloFab-2020\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.Properties.Resources.resources
+C:\Users\Armin\Desktop\HoloFab-2020\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.csproj.GenerateResource.cache
+C:\Users\Armin\Desktop\HoloFab-2020\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.csproj.CopyComplete
+C:\Users\Armin\Desktop\HoloFab-2020\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.dll
+C:\Users\Armin\Desktop\HoloFab-2020\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.pdb
+C:\Users\Armin\Desktop\HoloFab-2020\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.csprojAssemblyReference.cache
