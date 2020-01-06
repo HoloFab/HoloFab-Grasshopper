@@ -49,7 +49,7 @@ namespace HoloFab {
 			// Create robot Option List.
 			GH_ValueList robotValueList = new GH_ValueList();
 			robotValueList.CreateAttributes();
-			robotValueList.Attributes.Pivot = new PointF(this.Attributes.Pivot.X-300, this.Attributes.Pivot.Y-31);
+			robotValueList.Attributes.Pivot = new PointF(this.Attributes.Pivot.X-300, this.Attributes.Pivot.Y-20);
 			robotValueList.ListItems.Clear();
 			robotValueList.NickName = "Robot";
             

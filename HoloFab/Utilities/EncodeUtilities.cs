@@ -1,9 +1,12 @@
 ﻿using System;
+
 using System.Text;
 using Newtonsoft.Json;
 // Rhino only includes
 using System.Drawing;
 using Rhino.Geometry;
+
+using HoloFab.CustomData;
 
 namespace HoloFab {
 	// Tools for processing robit data.
@@ -30,19 +33,24 @@ namespace HoloFab {
 		}
 	}
 	// Part Shared with Unity.
+	// Tools for processing robit data.
 	public static partial class EncodeUtilities {
 		// Encode data into a json readable byte array.
-		public static byte[] EncodeData(string header, Object item, out string message){
+		public static byte[] EncodeData(string header, System.Object item, out string message){
 			string output = JsonConvert.SerializeObject(item);
 			if (header != string.Empty)
 				message = header + "|" + output;
 			else
 				message = output;
 			return Encoding.UTF8.GetBytes(message);
-        }
-        // Decode Data into a string.
-        public static string DecodeData(byte[] data) {
-            return Encoding.UTF8.GetString(data);
-        }
-    }
+		}
+		// Decode Data into a string.
+		public static string DecodeData(byte[] data) {
+			return Encoding.UTF8.GetString(data);
+		}
+		// Decode Data into a string.
+		public static string DecodeData(byte[] data, int index, int count) {
+			return Encoding.UTF8.GetString(data, index, count);
+		}
+	}
 }

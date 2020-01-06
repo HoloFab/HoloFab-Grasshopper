@@ -4,6 +4,7 @@ using System.Collections.Generic;
 namespace HoloFab {
 	// Structure to hold Custom data types holding data to be sent.
 	namespace CustomData {
+		public enum SourceType { TCP, UDP };
 		// Custom Mesh item encoding.
 		[Serializable]
 		public class MeshData {
