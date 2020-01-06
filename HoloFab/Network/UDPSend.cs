@@ -58,7 +58,6 @@ namespace HoloFab {
 			// Reset.
 			UDPSend.debugMessages = new List<string>();
 			if (UDPSend.client != null) {
-				UDPSend.client.Dispose();
 				UDPSend.client.Close();
 				UDPSend.client = null; // Good Practice?
 			}

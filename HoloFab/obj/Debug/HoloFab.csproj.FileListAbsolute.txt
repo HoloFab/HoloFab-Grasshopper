@@ -13,3 +13,8 @@ C:\Users\Armin\Desktop\HoloFab-2020\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFa
 C:\Users\Armin\Desktop\HoloFab-2020\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.dll
 C:\Users\Armin\Desktop\HoloFab-2020\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.pdb
 C:\Users\Armin\Desktop\HoloFab-2020\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.csprojAssemblyReference.cache
+D:\_HoloFab-2020\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.csprojAssemblyReference.cache
+D:\_HoloFab-2020\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.Properties.Resources.resources
+D:\_HoloFab-2020\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.csproj.GenerateResource.cache
+D:\_HoloFab-2020\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.dll
+D:\_HoloFab-2020\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.pdb
