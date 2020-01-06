@@ -18,3 +18,4 @@ D:\_HoloFab-2020\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.Properties.Resour
 D:\_HoloFab-2020\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.csproj.GenerateResource.cache
 D:\_HoloFab-2020\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.dll
 D:\_HoloFab-2020\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.pdb
+D:\_HoloFab-2020\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.csproj.CopyComplete
