@@ -61,7 +61,13 @@ namespace HoloFab
                 if (MeshStreaming.lastMessage != currentMessage)
                 {
                     MeshStreaming.lastMessage = currentMessage;
-                    TCPSend.Send(bytes, connect.remoteIP);
+
+                    if (!connect.tcp.Send(bytes))
+                    {
+                        this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Sending failed. Check the connection and try again.");
+                        return;
+                    }
+
                     MeshStreaming.debugMessages.Add("Component: MeshStreaming: Mesh data sent over TCP.");
                 }
             }

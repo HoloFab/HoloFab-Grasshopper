@@ -31,8 +31,26 @@ namespace HoloFab
             // Get inputs.
             string remoteIP = HoloConnect.defaultIP;
             if (!DA.GetData(0, ref remoteIP)) return;
-            Connection connect = new Connection(remoteIP, status);
-            
+
+            TCPSend tcp = new TCPSend();
+
+            if (this.status)
+            {
+                // Start TCP
+                if (!tcp.connect(remoteIP))
+                {
+                    this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Connection failed, please check your network connection and try again.");
+                    return;
+                }
+                else
+                {
+                    this.AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Connection established.");
+                }
+            }
+
+            // Process data.
+            Connection connect = new Connection(remoteIP, status, tcp);
+
             // Output.
             DA.SetData(0, connect);
         }
