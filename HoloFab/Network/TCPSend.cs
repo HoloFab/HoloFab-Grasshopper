@@ -5,45 +5,136 @@ using System.Net.Sockets;
 
 using HoloFab;
 
-namespace HoloFab {
-	// TCP sender.
-	public static class TCPSend {
-		private static TcpClient client;
-		private static NetworkStream stream;
-		private static int remotePort = 11111;
-		public static List<string> debugMessages = new List<string>();
-        
-		// Start a connection and send given byte array.
-		public static void Send(byte[] sendBuffer, string remoteIP) {
-			// Reset.
-			TCPSend.debugMessages = new List<string>();
-			if (TCPSend.client != null) {
-				TCPSend.client.Close();
-				TCPSend.client = null; // Good Practice?
-			}
-			if (TCPSend.stream != null) {
-				TCPSend.stream.Close();
-				TCPSend.stream = null; // Good Practice?
-			}
-			try {
-				// Open.
-				TCPSend.client = new TcpClient(remoteIP, TCPSend.remotePort);
-				TCPSend.stream = TCPSend.client.GetStream();
-				// Write.
-				TCPSend.stream.Write(sendBuffer, 0, sendBuffer.Length);
-				// Close.
-				TCPSend.stream.Close();
-				TCPSend.client.Close();
-				// Acknowledge.
-				TCPSend.debugMessages.Add("TCPSend: Data Sent!");
-			} catch (ArgumentNullException exception) {
-				// Exception.
-				TCPSend.debugMessages.Add("TCPSend: ArgumentNullException: " + exception.ToString());
-			} catch (SocketException exception) {
-				// Exception.
-				TCPSend.debugMessages.Add("TCPSend: SocketException: " + exception.ToString());
-			}
-			//Console.WriteLine(TCPSend.debugMessages[TCPSend.debugMessages.Count-1]);
-		}
-	}
+namespace HoloFab
+{
+    // TCP sender.
+    public class TCPSend
+    {
+        private TcpClient client;
+        private NetworkStream stream;
+        private static int remotePort = 11111;
+        public static List<string> debugMessages = new List<string>();
+        public bool connected;
+
+        public TCPSend()
+        {
+            // Reset.
+            TCPSend.debugMessages = new List<string>();
+            if (this.client != null)
+            {
+                this.client.Close();
+            }
+            if (this.stream != null)
+            {
+                this.stream.Close();
+            }
+        }
+
+        public bool connect(string remoteIP)
+        {
+            // Reset.
+            if (this.client != null)
+            {
+                this.client.Close();
+            }
+            if (this.stream != null)
+            {
+                this.stream.Close();
+            }
+            this.client = new TcpClient();
+            try
+            {
+                // Open.
+                if (!this.client.ConnectAsync(remoteIP, TCPSend.remotePort).Wait(2000))
+                {
+                    // connection failure
+                    this.connected = false;
+                    return false;
+                }
+                this.stream = this.client.GetStream();
+                this.connected = true;
+                // Acknowledge.
+                TCPSend.debugMessages.Add("TCPSend: Connection Stablished!");
+                return true;
+            }
+            catch (ArgumentNullException exception)
+            {
+                // Exception.
+                TCPSend.debugMessages.Add("TCPSend: ArgumentNullException: " + exception.ToString());
+                this.connected = false;
+                return false;
+            }
+            catch (SocketException exception)
+            {
+                // Exception.
+                TCPSend.debugMessages.Add("TCPSend: SocketException: " + exception.ToString());
+                this.connected = false;
+                return false;
+            }
+            catch (Exception e)
+            {
+                TCPSend.debugMessages.Add("TCPSend: UnhandledException: " + e.ToString());
+                this.connected = false;
+                return false;
+            }
+        }
+
+        ~TCPSend()
+        {
+            // Reset.
+            if (this.client != null)
+            {
+                this.client.Close();
+            }
+            if (this.stream != null)
+            {
+                this.stream.Close();
+            }
+        }
+
+        // Start a connection and send given byte array.
+        public string Send(byte[] sendBuffer)
+        {
+            try
+            {
+                if (!this.client.Connected)
+                {
+                    return "Client Disconnected!";
+                }
+
+                // Write.
+                this.stream.Write(sendBuffer, 0, sendBuffer.Length);
+                // Acknowledge.
+                TCPSend.debugMessages.Add("TCPSend: Data Sent!");
+                
+                return "Sent";
+            }
+            catch (ArgumentNullException exception)
+            {
+                // Exception.
+                TCPSend.debugMessages.Add("TCPSend: ArgumentNullException: " + exception.ToString());
+                return exception.ToString();
+            }
+            catch (SocketException exception)
+            {
+                // Exception.
+                TCPSend.debugMessages.Add("TCPSend: SocketException: " + exception.ToString());
+                return exception.ToString();
+            }
+        }
+
+        public void disconnect()
+        {
+            // Reset.
+            if (this.client != null)
+            {
+                this.client.Close();
+            }
+            if (this.stream != null)
+            {
+                this.stream.Close();
+                this.stream = null; // Good Practice?
+            }
+        }
+    }
 }
