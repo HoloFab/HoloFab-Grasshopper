@@ -47,6 +47,10 @@ namespace HoloFab
                     this.AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Connection established.");
                 }
             }
+            else
+            {
+                tcp.disconnect();
+            }
 
             // Process data.
             Connection connect = new Connection(remoteIP, status, tcp);

@@ -43,11 +43,9 @@ namespace HoloFab
                     "The number of Colors does not match the number of Mesh objects. The last color will be repeated.");
             }
 
-            // Process data.
+            // If connection open start acting.
             if (connect.status)
             {
-                // If connection open start acting.
-
                 // Encode mesh data.
                 List<MeshData> inputMeshData = new List<MeshData> { };
                 for (int i = 0; i < inputMeshes.Count; i++)
@@ -60,14 +58,15 @@ namespace HoloFab
                 byte[] bytes = EncodeUtilities.EncodeData("MESHSTREAMING", inputMeshData, out currentMessage);
                 if (MeshStreaming.lastMessage != currentMessage)
                 {
-                    MeshStreaming.lastMessage = currentMessage;
 
-                    if (!connect.tcp.Send(bytes))
+                    MeshStreaming.lastMessage = currentMessage;
+                    string result = connect.tcp.Send(bytes);
+                    if (result != "Sent")
                     {
-                        this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Sending failed. Check the connection and try again.");
+                        this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Sending failed. Check the connection and try again. \n" + result);
                         return;
                     }
-
+                    this.AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, result);
                     MeshStreaming.debugMessages.Add("Component: MeshStreaming: Mesh data sent over TCP.");
                 }
             }

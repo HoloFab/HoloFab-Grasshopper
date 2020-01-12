@@ -44,13 +44,15 @@ namespace HoloFab
             this.client = new TcpClient();
             try
             {
-                // Open.    
+                // Open.
                 if (!this.client.ConnectAsync(remoteIP, TCPSend.remotePort).Wait(2000))
                 {
                     // connection failure
+                    this.connected = false;
                     return false;
                 }
                 this.stream = this.client.GetStream();
+                this.connected = true;
                 // Acknowledge.
                 TCPSend.debugMessages.Add("TCPSend: Connection Stablished!");
                 return true;
@@ -59,17 +61,20 @@ namespace HoloFab
             {
                 // Exception.
                 TCPSend.debugMessages.Add("TCPSend: ArgumentNullException: " + exception.ToString());
+                this.connected = false;
                 return false;
             }
             catch (SocketException exception)
             {
                 // Exception.
                 TCPSend.debugMessages.Add("TCPSend: SocketException: " + exception.ToString());
+                this.connected = false;
                 return false;
             }
             catch (Exception e)
             {
                 TCPSend.debugMessages.Add("TCPSend: UnhandledException: " + e.ToString());
+                this.connected = false;
                 return false;
             }
         }
@@ -88,43 +93,48 @@ namespace HoloFab
         }
 
         // Start a connection and send given byte array.
-        public bool Send(byte[] sendBuffer)
+        public string Send(byte[] sendBuffer)
         {
             try
             {
+                if (!this.client.Connected)
+                {
+                    return "Client Disconnected!";
+                }
+
                 // Write.
                 this.stream.Write(sendBuffer, 0, sendBuffer.Length);
                 // Acknowledge.
                 TCPSend.debugMessages.Add("TCPSend: Data Sent!");
-                return true;
+                
+                return "Sent";
             }
             catch (ArgumentNullException exception)
             {
                 // Exception.
                 TCPSend.debugMessages.Add("TCPSend: ArgumentNullException: " + exception.ToString());
-                return false;
+                return exception.ToString();
             }
             catch (SocketException exception)
             {
                 // Exception.
                 TCPSend.debugMessages.Add("TCPSend: SocketException: " + exception.ToString());
-                return false;
+                return exception.ToString();
             }
-            //Console.WriteLine(TCPSend.debugMessages[TCPSend.debugMessages.Count-1]);
         }
 
-        //public void reset()
-        //{
-        //    // Reset.
-        //    if (this.client != null)
-        //    {
-        //        this.client.Close();
-        //    }
-        //    if (this.stream != null)
-        //    {
-        //        this.stream.Close();
-        //        this.stream = null; // Good Practice?
-        //    }
-        //}
+        public void disconnect()
+        {
+            // Reset.
+            if (this.client != null)
+            {
+                this.client.Close();
+            }
+            if (this.stream != null)
+            {
+                this.stream.Close();
+                this.stream = null; // Good Practice?
+            }
+        }
     }
 }
