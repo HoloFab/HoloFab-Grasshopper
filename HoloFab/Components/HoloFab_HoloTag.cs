@@ -48,10 +48,10 @@ namespace HoloFab {
 			if (connect.status) {
 				// If connection open start acting.
                 
-				IList<string> currentTexts = new List<string>(){};
-				IList<float[]> currentTextLocations = new List<float[]>(){};
-				IList<float> currentTextSizes = new List<float>(){};
-				IList<int[]> currentTextColors = new List<int[]>(){};
+				List<string> currentTexts = new List<string>(){};
+				List<float[]> currentTextLocations = new List<float[]>(){};
+				List<float> currentTextSizes = new List<float>(){};
+				List<int[]> currentTextColors = new List<int[]>(){};
 				for(int i=0; i < inputText.Count; i++) {
 					float currentSize = (float) ((inputTextSize.Count > 1) ? inputTextSize[i] : inputTextSize[0]);
 					Color currentColor = (inputTextColor.Count > 1) ? inputTextColor[i] : inputTextColor[0];
@@ -70,21 +70,21 @@ namespace HoloFab {
 					UDPSend.Send(bytes, connect.remoteIP);
 					HoloTag.debugMessages.Add("Component: HoloTag: Mesh data sent over UDP.");
 				}
-            }
-
-            // Output.
-            // DA.SetData(0, HoloTag.debugMessages[HoloTag.debugMessages.Count-1]);
-        }
-        //////////////////////////////////////////////////////////////////////////
-        /// <summary>
-        /// Initializes a new instance of the HoloTag class.
-        /// Each implementation of GH_Component must provide a public
-        /// constructor without any arguments.
-        /// Category represents the Tab in which the component will appear,
-        /// Subcategory the panel. If you use non-existing tab or panel names,
-        /// new tabs/panels will automatically be created.
-        /// </summary>
-        public HoloTag()
+			}
+            
+			// Output.
+			// DA.SetData(0, HoloTag.debugMessages[HoloTag.debugMessages.Count-1]);
+		}
+		//////////////////////////////////////////////////////////////////////////
+		/// <summary>
+		/// Initializes a new instance of the HoloTag class.
+		/// Each implementation of GH_Component must provide a public
+		/// constructor without any arguments.
+		/// Category represents the Tab in which the component will appear,
+		/// Subcategory the panel. If you use non-existing tab or panel names,
+		/// new tabs/panels will automatically be created.
+		/// </summary>
+		public HoloTag()
 			: base("HoloTag", "HT",
 			       "Streams fabrication data as strings",
 			       "HoloFab", "Main") {}
