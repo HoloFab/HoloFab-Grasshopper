@@ -19,11 +19,3 @@ D:\_HoloFab-2020\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.csproj.GenerateRe
 D:\_HoloFab-2020\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.dll
 D:\_HoloFab-2020\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.pdb
 D:\_HoloFab-2020\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.csproj.CopyComplete
-C:\Users\danii\AppData\Roaming\Grasshopper\Libraries\HoloFab.dll
-C:\Users\danii\AppData\Roaming\Grasshopper\Libraries\HoloFab.pdb
-C:\00_USERFILES\Work\22_HoloFab\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.csprojAssemblyReference.cache
-C:\00_USERFILES\Work\22_HoloFab\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.Properties.Resources.resources
-C:\00_USERFILES\Work\22_HoloFab\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.csproj.GenerateResource.cache
-C:\00_USERFILES\Work\22_HoloFab\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.csproj.CopyComplete
-C:\00_USERFILES\Work\22_HoloFab\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.dll
-C:\00_USERFILES\Work\22_HoloFab\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.pdb
