@@ -22,6 +22,7 @@ namespace HoloFab
         // - settings
         public bool status = false;
         private static string defaultIP = "127.0.0.1";
+        TCPSend tcp = new TCPSend();
         /// <summary>
         /// This is the method that actually does the work.
         /// </summary>
@@ -31,8 +32,28 @@ namespace HoloFab
             // Get inputs.
             string remoteIP = HoloConnect.defaultIP;
             if (!DA.GetData(0, ref remoteIP)) return;
-            Connection connect = new Connection(remoteIP, status);
             
+            if (this.status)
+            {
+                // Start TCP
+                if (!this.tcp.connect(remoteIP))
+                {
+                    this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Connection failed, please check your network connection and try again.");
+                    return;
+                }
+                else
+                {
+                    this.AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Connection established.");
+                }
+            }
+            else
+            {
+                this.tcp.disconnect();
+            }
+
+            // Process data.
+            Connection connect = new Connection(remoteIP, status, tcp);
+
             // Output.
             DA.SetData(0, connect);
         }

@@ -35,7 +35,7 @@ namespace HoloFab {
 				byte[] bytes = EncodeUtilities.EncodeData("HOLOBOTS", inputRobots.ToArray(), out currentMessage);
 				if (RobotStreaming.lastMessage != currentMessage) {
 					RobotStreaming.lastMessage = currentMessage;
-					TCPSend.Send(bytes, connect.remoteIP);
+					connect.tcp.Send(bytes);
 					RobotStreaming.debugMessages.Add("Component: Robot Streaming: Robot data sent over TCP.");
 				}
 			} else {
