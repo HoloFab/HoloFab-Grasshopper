@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using System.Text;
 using System.Net.Sockets;
 
 using HoloFab;
@@ -18,29 +18,21 @@ namespace HoloFab
 
         public TCPSend()
         {
-            // Reset.
-            TCPSend.debugMessages = new List<string>();
-            if (this.client != null)
-            {
-                this.client.Close();
-            }
-            if (this.stream != null)
-            {
-                this.stream.Close();
-            }
+            ;
         }
 
         public bool connect(string remoteIP)
         {
-            // Reset.
-            if (this.client != null)
-            {
-                this.client.Close();
-            }
-            if (this.stream != null)
-            {
-                this.stream.Close();
-            }
+            //// Reset.
+            //if (this.stream != null)
+            //{
+            //    this.stream.Close();
+            //}
+            //if (this.client != null)
+            //{
+            //    this.client.Close();
+            //}
+            
             this.client = new TcpClient();
             try
             {
@@ -51,11 +43,18 @@ namespace HoloFab
                     this.connected = false;
                     return false;
                 }
-                this.stream = this.client.GetStream();
-                this.connected = true;
-                // Acknowledge.
-                TCPSend.debugMessages.Add("TCPSend: Connection Stablished!");
-                return true;
+                if (this.client.Connected)
+                {
+                    this.stream = this.client.GetStream();
+                    this.connected = true;
+                    // Acknowledge.
+                    TCPSend.debugMessages.Add("TCPSend: Connection Stablished!");
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
             }
             catch (ArgumentNullException exception)
             {
@@ -82,13 +81,13 @@ namespace HoloFab
         ~TCPSend()
         {
             // Reset.
-            if (this.client != null)
-            {
-                this.client.Close();
-            }
             if (this.stream != null)
             {
                 this.stream.Close();
+            }
+            if (this.client != null)
+            {
+                this.client.Close();
             }
         }
 
@@ -102,8 +101,13 @@ namespace HoloFab
                     return "Client Disconnected!";
                 }
 
-                // Write.
-                this.stream.Write(sendBuffer, 0, sendBuffer.Length);
+                if (this.stream.CanWrite)
+                {
+                    // Write.
+                    this.stream.Write(sendBuffer, 0, sendBuffer.Length);
+                    byte[] flag = Encoding.ASCII.GetBytes(";");
+                    this.stream.Write(flag, 0, flag.Length);
+                }
                 // Acknowledge.
                 TCPSend.debugMessages.Add("TCPSend: Data Sent!");
                 
@@ -126,14 +130,13 @@ namespace HoloFab
         public void disconnect()
         {
             // Reset.
-            if (this.client != null)
-            {
-                this.client.Close();
-            }
             if (this.stream != null)
             {
                 this.stream.Close();
-                this.stream = null; // Good Practice?
+            }
+            if (this.client != null)
+            {
+                this.client.Close();
             }
         }
     }

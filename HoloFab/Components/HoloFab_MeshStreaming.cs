@@ -20,6 +20,8 @@ namespace HoloFab
         // - settings
         private static Color defaultColor = Color.Red;
 
+        private static int cntr = 0;
+
         /// <summary>
         /// This is the method that actually does the work.
         /// </summary>
@@ -58,7 +60,8 @@ namespace HoloFab
                 byte[] bytes = EncodeUtilities.EncodeData("MESHSTREAMING", inputMeshData, out currentMessage);
                 if (MeshStreaming.lastMessage != currentMessage)
                 {
-
+                    cntr += 1;
+                    this.AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Sending: " + cntr.ToString());
                     MeshStreaming.lastMessage = currentMessage;
                     string result = connect.tcp.Send(bytes);
                     if (result != "Sent")
