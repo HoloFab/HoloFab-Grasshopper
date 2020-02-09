@@ -1,6 +1,6 @@
 
 /.vs/*
 
-*.cache
+*obj/*
 
 !.gitignore
