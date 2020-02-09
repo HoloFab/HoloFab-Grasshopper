@@ -1,6 +1,6 @@
 
 /.vs/*
 
-*obj/*
+/HoloFab/obj/*
 
 !.gitignore
