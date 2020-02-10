@@ -67,7 +67,7 @@ namespace HoloFab {
 				byte[] bytes = EncodeUtilities.EncodeData("HOLOTAG", tags, out currentMessage);
 				if (HoloTag.lastMessage != currentMessage) {
 					HoloTag.lastMessage = currentMessage;
-					UDPSend.Send(bytes, connect.remoteIP);
+					connect.udpSender.Send(bytes, connect.remoteIP);
 					HoloTag.debugMessages.Add("Component: HoloTag: Mesh data sent over UDP.");
 				}
 			}

@@ -39,20 +39,20 @@ namespace HoloFab {
 					// Send local IPAddress for device to communicate back.
 					string currentMessage;
 					byte[] bytes = EncodeUtilities.EncodeData("IPADDRESS", NetworkUtilities.LocalIPAddress(), out currentMessage);
-					UDPSend.Send(bytes, connect.remoteIP);
+					connect.udpSender.Send(bytes, connect.remoteIP);
 					UIReceiver.debugMessages.Add("Component: UIReceiver: Sent local IP.");
 				}
                 
 				// Prepare to receive UI data.
 				try {
 					// Start Listening.
-					UDPReceive.TryStartConnection();
-					UIReceiver.currentInput = UDPReceive.dataMessages[UDPReceive.dataMessages.Count - 1];
+					connect.udpReceiver.TryStartConnection();
+					UIReceiver.currentInput = connect.udpReceiver.dataMessages[connect.udpReceiver.dataMessages.Count - 1];
 					if (UIReceiver.lastInputs != currentInput) {
 						UIReceiver.lastInputs = currentInput;
-                        // If any new data received - process it.
-                        UIData data = new UIData();
-                        data = JsonConvert.DeserializeObject<UIData>(currentInput);
+						// If any new data received - process it.
+						UIData data = new UIData();
+						data = JsonConvert.DeserializeObject<UIData>(currentInput);
 						UIReceiver.currentBools = new List<bool> (data.bools);
 						UIReceiver.currentInts = new List<int> (data.ints);
 						UIReceiver.currentFloats = new List<float> (data.floats);
@@ -66,10 +66,10 @@ namespace HoloFab {
 				// If connection disabled - stop receiving.
 				UIReceiver.flagProcessed = false;
 				UIReceiver.lastInputs = string.Empty;
-                UIReceiver.currentBools = new List<bool>();
-                UIReceiver.currentInts = new List<int>();
-                UIReceiver.currentFloats = new List<float>();
-                UDPReceive.StopConnection();
+				UIReceiver.currentBools = new List<bool>();
+				UIReceiver.currentInts = new List<int>();
+				UIReceiver.currentFloats = new List<float>();
+				connect.udpReceiver.StopConnection();
 				UIReceiver.debugMessages.Add("Component: UIReceiver: Set 'Send' on true in HoloFab 'HoloConnect'.");
 			}
             

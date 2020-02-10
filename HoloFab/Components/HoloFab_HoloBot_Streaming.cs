@@ -9,12 +9,12 @@ using System.Text;
 using HoloFab.CustomData;
 
 namespace HoloFab {
-    public class RobotStreaming : GH_Component {
-        //////////////////////////////////////////////////////////////////////////
+	public class RobotStreaming : GH_Component {
+		//////////////////////////////////////////////////////////////////////////
 		// - history
 		public static List<string> debugMessages = new List<string>();
 		private static string lastMessage = string.Empty;
-
+        
 		/// <summary>
 		/// This is the method that actually does the work.
 		/// </summary>
@@ -22,7 +22,7 @@ namespace HoloFab {
 		protected override void SolveInstance(IGH_DataAccess DA) {
 			// Get inputs.
 			List<RobotData> inputRobots = new List<RobotData>();
-            Connection connect = new Connection();
+			Connection connect = new Connection();
 			if (!DA.GetDataList(0, inputRobots)) return;
 			if (!DA.GetData(1, ref connect)) return;
             
@@ -35,7 +35,7 @@ namespace HoloFab {
 				byte[] bytes = EncodeUtilities.EncodeData("HOLOBOTS", inputRobots.ToArray(), out currentMessage);
 				if (RobotStreaming.lastMessage != currentMessage) {
 					RobotStreaming.lastMessage = currentMessage;
-					connect.tcp.Send(bytes);
+					connect.tcpSender.Send(bytes);
 					RobotStreaming.debugMessages.Add("Component: Robot Streaming: Robot data sent over TCP.");
 				}
 			} else {
