@@ -20,6 +20,8 @@ namespace HoloFab {
 		// - settings
 		public bool status = false;
 		private static string defaultIP = "127.0.0.1";
+
+		public List<string> debug;
 		/// <summary>
 		/// This is the method that actually does the work.
 		/// </summary>
@@ -36,6 +38,8 @@ namespace HoloFab {
 			if (this.status) {
 				// Start TCP
 				if (!tcpSender.Connect(remoteIP)) {
+					this.debug = tcpSender.debugMessages;
+					DA.SetData(0, this.debug);
 					this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Connection failed, please check your network connection and try again.");
 					return;
 				} else {
@@ -48,7 +52,7 @@ namespace HoloFab {
             
 			// Process data.
 			Connection connect = new Connection(remoteIP, status, udpSender, udpReceiver, tcpSender);
-            
+
 			// Output.
 			DA.SetData(0, connect);
 		}
@@ -101,6 +105,7 @@ namespace HoloFab {
 		protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
 		{
 			pManager.AddGenericParameter("Connect", "Cn", "Connection object to be used in other HoloFab components.", GH_ParamAccess.list);
+			pManager.AddGenericParameter("Debug", "D", "Debug messages from network units.", GH_ParamAccess.list);
 		}
 	}
     

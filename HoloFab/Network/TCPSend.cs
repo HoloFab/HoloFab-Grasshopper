@@ -11,13 +11,13 @@ namespace HoloFab {
 		private TcpClient client;
 		private NetworkStream stream;
 		private static int remotePort = 11111;
-		public static List<string> debugMessages = new List<string>();
+		public List<string> debugMessages = new List<string>();
 		public bool connected;
         
 		public TCPSend() {
 			// Reset.
 			Reset();
-			TCPSend.debugMessages = new List<string>();
+			this.debugMessages = new List<string>();
 		}
         
 		public bool Connect(string remoteIP) {
@@ -34,20 +34,20 @@ namespace HoloFab {
 				this.stream = this.client.GetStream();
 				this.connected = true;
 				// Acknowledge.
-				TCPSend.debugMessages.Add("TCPSend: Connection Stablished!");
+				this.debugMessages.Add("TCPSend: Connection Stablished!");
 				return true;
 			} catch (ArgumentNullException exception) {
 				// Exception.
-				TCPSend.debugMessages.Add("TCPSend: ArgumentNullException: " + exception.ToString());
+				this.debugMessages.Add("TCPSend: ArgumentNullException: " + exception.ToString());
 				this.connected = false;
 				return false;
 			} catch (SocketException exception) {
 				// Exception.
-				TCPSend.debugMessages.Add("TCPSend: SocketException: " + exception.ToString());
+				this.debugMessages.Add("TCPSend: SocketException: " + exception.ToString());
 				this.connected = false;
 				return false;
 			} catch (Exception e) {
-				TCPSend.debugMessages.Add("TCPSend: UnhandledException: " + e.ToString());
+				this.debugMessages.Add("TCPSend: UnhandledException: " + e.ToString());
 				this.connected = false;
 				return false;
 			}
@@ -67,16 +67,16 @@ namespace HoloFab {
 				// Write.
 				this.stream.Write(sendBuffer, 0, sendBuffer.Length);
 				// Acknowledge.
-				TCPSend.debugMessages.Add("TCPSend: Data Sent!");
+				this.debugMessages.Add("TCPSend: Data Sent!");
                 
 				return "Sent";
 			} catch (ArgumentNullException exception) {
 				// Exception.
-				TCPSend.debugMessages.Add("TCPSend: ArgumentNullException: " + exception.ToString());
+				this.debugMessages.Add("TCPSend: ArgumentNullException: " + exception.ToString());
 				return exception.ToString();
 			} catch (SocketException exception) {
 				// Exception.
-				TCPSend.debugMessages.Add("TCPSend: SocketException: " + exception.ToString());
+				this.debugMessages.Add("TCPSend: SocketException: " + exception.ToString());
 				return exception.ToString();
 			}
 		}
@@ -90,6 +90,7 @@ namespace HoloFab {
 			// Reset.
 			if (this.client != null) {
 				this.client.Close();
+				this.client = null;
 			}
 			if (this.stream != null) {
 				this.stream.Close();
