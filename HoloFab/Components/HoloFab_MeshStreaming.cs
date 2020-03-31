@@ -7,6 +7,7 @@ using Grasshopper.Kernel;
 using Newtonsoft.Json;
 
 using HoloFab.CustomData;
+using System.Windows.Forms;
 
 namespace HoloFab
 {
@@ -21,6 +22,8 @@ namespace HoloFab
         private static Color defaultColor = Color.Red;
 
         private static int cntr = 0;
+        bool protocolIsTCP = true;
+
 
         /// <summary>
         /// This is the method that actually does the work.
@@ -129,6 +132,27 @@ namespace HoloFab
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             // pManager.AddTextParameter("Debug", "D", "Debug console.", GH_ParamAccess.item);
+        }
+
+        protected override void AppendAdditionalComponentMenuItems(ToolStripDropDown menu)
+        {
+            base.AppendAdditionalComponentMenuItems(menu);
+            Menu_AppendSeparator(menu);
+            Menu_AppendItem(menu, "Change Protocol(TCP/UDP)", SwitchProtocol, true);
+        }
+
+        private void SwitchProtocol(object sender, EventArgs e)
+        {
+            this.protocolIsTCP = !this.protocolIsTCP;
+            if (this.protocolIsTCP)
+            {
+                this.Message = "Protocol: TCP";
+            }
+            else
+            {
+                this.Message = "Protocol: UDP";
+            }
+            Grasshopper.Instances.RedrawCanvas();
         }
     }
 }
