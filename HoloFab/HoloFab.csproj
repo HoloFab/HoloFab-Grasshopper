@@ -85,7 +85,6 @@
     <Compile Include="Components\HoloFab_HoloConnect.cs" />
     <Compile Include="Components\HoloFab_HoloTag.cs" />
     <Compile Include="Components\HoloFab_MeshStreaming.cs" />
-    <Compile Include="Components\HoloFab_MeshStreamingPlus.cs" />
     <Compile Include="Components\HoloFab_UIReceiver.cs" />
     <Compile Include="Components\HoloFab_HoloBot.cs" />
     <Compile Include="Components\HoloFab_HoloBot_Streaming.cs" />
