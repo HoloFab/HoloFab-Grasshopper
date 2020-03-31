@@ -64,6 +64,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Network\FindServer.cs" />
     <Compile Include="Network\TCPSend.cs" />
     <Compile Include="Network\UDPSend.cs" />
     <Compile Include="Network\UDPReceive.cs" />
@@ -76,6 +77,7 @@
     <Compile Include="Types\CustomData.cs" />
     <Compile Include="Types\CustomNetowork.cs" />
     <Compile Include="Types\CustomRobot.cs" />
+    <Compile Include="Types\CustomClient.cs" />
     <Compile Include="Utilities\EncodeUtilities.cs" />
     <Compile Include="Utilities\MeshUtilities.cs" />
     <Compile Include="Utilities\NetworkUtilities.cs" />
