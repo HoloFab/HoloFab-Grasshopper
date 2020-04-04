@@ -1,18 +1,20 @@
 ﻿using System.Net;
+using System;
 
 namespace HoloFab
 {
     namespace CustomData
     {
-        public struct HoloDevice
+        public class HoloDevice
         {
             public string remoteIP;
             public string name;
-            public HoloDevice(IPEndPoint ClientEp, string _name)
+            public DateTime lastCall { get; set; }
+            public HoloDevice(string ClientEp, string name)
             {
-                this.remoteIP = ClientEp.Address.ToString();
-                this.name = _name;
-                
+                remoteIP = ClientEp;
+                this.name = name;
+                lastCall = DateTime.Now;
             }
         }
     }

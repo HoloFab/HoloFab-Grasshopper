@@ -23,7 +23,7 @@ namespace HoloFab
         public bool status = false;
         private static string defaultIP = "127.0.0.1";
         TCPSend tcp = new TCPSend();
-
+        public FindServer fs = new FindServer();
         /// <summary>
         /// This is the method that actually does the work.
         /// </summary>
@@ -34,7 +34,7 @@ namespace HoloFab
             string remoteIP = HoloConnect.defaultIP;
             if (!DA.GetData(0, ref remoteIP)) return;
 
-            FindServer.StartScanning();
+            fs.StartScanning();
 
             if (this.status)
             {
@@ -132,12 +132,12 @@ namespace HoloFab
             System.Drawing.Rectangle rec1 = rec0;
             System.Drawing.Rectangle rec2 = rec0;
             rec1.Y = rec1.Bottom - 22;
-            rec2.Y = rec2.Bottom + 20;
-            rec2.X -= 25;
+            rec2.Y = rec2.Bottom + 10;
+            // rec2.X -= 125;
 
             rec1.Height = 22;
             rec2.Height = 100;
-            rec2.Width += 50;
+            rec2.Width += 250;
 
             rec1.Inflate(-2, -2);
             rec2.Inflate(-2, -2);
@@ -161,12 +161,12 @@ namespace HoloFab
                     a => a.AddressFamily == AddressFamily.InterNetwork);
                 GH_Capsule button = GH_Capsule.CreateTextCapsule(ButtonBounds, ButtonBounds, GH_Palette.Black, comp.status ? "Disconnect" : "Connect", 2, 0);
                 button.Render(graphics, Selected, Owner.Locked, false);
-                string devices = "Devices:\n";
-                for (int ii = 0; ii < FindServer.devices.Count; ii++)
+                string devices = "Available Devices:\n\n";
+                for (int ii = 0; ii < comp.fs.devices.Count; ii++)
                 {
-                    devices += FindServer.devices[ii].name + "(" + FindServer.devices[ii].remoteIP + ")\n";
+                    devices += comp.fs.devices[ii].name + "\n(" + comp.fs.devices[ii].remoteIP + ")\n\n";
                 }
-                graphics.DrawString(devices, GH_FontServer.NewFont(FontFamily.GenericMonospace, 6, FontStyle.Regular), Brushes.Black, TextBounds, GH_TextRenderingConstants.CenterCenter);
+                graphics.DrawString(devices, GH_FontServer.NewFont(FontFamily.GenericMonospace, 8, FontStyle.Regular), Brushes.Black, TextBounds);
                 button.Dispose();
             }
         }

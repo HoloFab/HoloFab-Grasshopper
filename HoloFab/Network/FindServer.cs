@@ -8,47 +8,70 @@ using Grasshopper.Kernel;
 using Rhino.Geometry;
 using HoloFab.CustomData;
 
+using Grasshopper;
+using Grasshopper.GUI;
+using Grasshopper.GUI.Canvas;
+using Grasshopper.Kernel.Attributes;
 
 namespace HoloFab
 {
-    public static class FindServer
+    public class FindServer
     {
 
         // Thread Object Reference.
-        private static Thread receiveThread = null;
+        private Thread receiveThread = null;
         // Client List
-        public static List<string> clients = new List<string>();
-        public static List<HoloDevice> devices = new List<HoloDevice>();
+        public List<string> clients = new List<string>();
+        public List<HoloDevice> devices = new List<HoloDevice>();
 
-        private static void discoverClients()
+        public FindServer()
         {
-            var Server = new UdpClient(8888);
-            var ResponseData = Encoding.ASCII.GetBytes("HolloWorld");
+        }
+
+        private void discoverClients()
+        {
+            IPEndPoint ClientEp = new IPEndPoint(IPAddress.Any, 0);
 
             while (true)
             {
-                IPEndPoint ClientEp = new IPEndPoint(IPAddress.Any, 0);
-                var ClientRequestData = Server.Receive(ref ClientEp);
-                string ClientRequest = Encoding.ASCII.GetString(ClientRequestData);
-
-                Console.WriteLine("Recived {0} from {1}, sending response", ClientRequest, ClientEp.Address.ToString());
-                if (!FindServer.clients.Contains(ClientEp.Address.ToString()))
+                var Server = new UdpClient(8888);
+                Server.Client.ReceiveTimeout = 700;
+                try
                 {
-                    FindServer.clients.Add(ClientEp.Address.ToString());
-                    FindServer.devices.Add(new HoloDevice(ClientEp, ClientRequest));
+                    var ClientRequestData = Server.Receive(ref ClientEp);
+                    string ClientRequest = Encoding.ASCII.GetString(ClientRequestData);
+                    string deviceIP = ClientEp.Address.ToString();
+                    
+                    if (!devices.Exists(d => d.remoteIP == deviceIP))
+                    {
+                        devices.Add(new HoloDevice(deviceIP, ClientRequest));
+                        Grasshopper.Instances.InvalidateCanvas();
+                    }
+                    else
+                    {
+                        devices.Find(d => d.remoteIP == deviceIP).lastCall = DateTime.Now;
+                    }
                 }
+                catch
+                {
+                }
+                finally
+                {
+                    Server.Close();
+                }
+                if (devices.RemoveAll(d => DateTime.Now - d.lastCall > TimeSpan.FromSeconds(4)) > 0) Grasshopper.Instances.InvalidateCanvas(); ;
             }
         }
 
-        public static void StartScanning()
+        public void StartScanning()
         {
-            if (FindServer.receiveThread == null || !FindServer.receiveThread.IsAlive)
+            if (receiveThread == null || !receiveThread.IsAlive)
             {
                 // Reset.
                 // Start the thread.
-                FindServer.receiveThread = new Thread(new ThreadStart(discoverClients));
-                FindServer.receiveThread.IsBackground = true;
-                FindServer.receiveThread.Start();
+                receiveThread = new Thread(new ThreadStart(discoverClients));
+                receiveThread.IsBackground = true;
+                receiveThread.Start();
             }
         }
     }
