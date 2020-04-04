@@ -111,9 +111,6 @@ namespace HoloFab
             pManager.AddGenericParameter("Connect", "Cn", "Connection object to be used in other HoloFab components.", GH_ParamAccess.list);
         }
     }
-
-
-
     public class Attributes_Custom : Grasshopper.Kernel.Attributes.GH_ComponentAttributes
     {
         HoloConnect comp;
@@ -149,7 +146,6 @@ namespace HoloFab
         }
         private System.Drawing.Rectangle ButtonBounds { get; set; }
         private System.Drawing.Rectangle TextBounds { get; set; }
-
         protected override void Render(GH_Canvas canvas, System.Drawing.Graphics graphics, GH_CanvasChannel channel)
         {
             base.Render(canvas, graphics, channel);

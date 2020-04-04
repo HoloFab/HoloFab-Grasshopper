@@ -14,20 +14,11 @@ namespace HoloFab
     // A HoloFab class to send mesh to AR device via TCP.
     public class MeshStreaming : GH_Component
     {
-        //////////////////////////////////////////////////////////////////////////
-        // - history
         public static List<string> debugMessages = new List<string>();
         private string lastMessage = string.Empty;
-        // - settings
         private static Color defaultColor = Color.Red;
-
-        private static int cntr = 0;
         bool protocolIsTCP = true;
 
-        /// <summary>
-        /// This is the method that actually does the work.
-        /// </summary>
-        /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // Get inputs.
@@ -40,13 +31,11 @@ namespace HoloFab
             // Check inputs.
             if ((inputColor.Count > 1) && (inputColor.Count != inputMeshes.Count))
             {
-                MeshStreaming.debugMessages.Add("Component: MeshStreaming: The number of Colors should be one or equal to the number of Mesh objects.");
                 this.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning,
                     inputColor.Count > inputMeshes.Count ?
                     "The number of Colors does not match the number of Mesh objects. Extra colors will be ignored." :
                     "The number of Colors does not match the number of Mesh objects. The last color will be repeated.");
             }
-
             // If connection open start acting.
             if (connect.status)
             {
@@ -60,13 +49,11 @@ namespace HoloFab
                 // Send mesh data.
                 string currentMessage = string.Empty;
                 byte[] bytes = EncodeUtilities.EncodeData("MESHSTREAMING", inputMeshData, out currentMessage);
-                if (this.lastMessage != currentMessage)
+                if (this.lastMessage != currentMessage)     // Is it required?
                 {
+                    this.lastMessage = currentMessage;
                     if (this.protocolIsTCP)
                     {
-                        cntr += 1;
-                        this.AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Sending: " + cntr.ToString());
-                        this.lastMessage = currentMessage;
                         string result = connect.tcp.Send(bytes);
                         if (result != "Sent")
                         {
@@ -77,7 +64,6 @@ namespace HoloFab
                     }
                     else
                     {
-                        this.lastMessage = currentMessage;
                         UDPSend.Send(bytes, connect.remoteIP);
                     }
                 }
