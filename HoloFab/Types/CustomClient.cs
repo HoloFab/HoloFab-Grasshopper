@@ -12,7 +12,7 @@ namespace HoloFab {
 				this.name = _name;
 			}
 			// Encode information into String.
-			public string ToString(){
+			public override string ToString(){
 				return this.name + "(" + this.remoteIP + ")";
 			}
 		}

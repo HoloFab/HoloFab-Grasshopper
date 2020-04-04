@@ -18,6 +18,9 @@ namespace HoloFab {
 				this.udpReceiver = new UDPReceive();
 				this.tcpSender = new TCPSend(_remoteIP);
 			}
+			~Connection() {
+				Disconnect();
+			}
 			// public Connection(string _remoteIP, bool _status, UDPSend _udpSender, UDPReceive _udpReceiver, TCPSend _tcpSender) {
 			// 	this.remoteIP = _remoteIP;
 			// 	this.status = _status;

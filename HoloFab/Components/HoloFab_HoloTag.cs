@@ -75,6 +75,9 @@ namespace HoloFab {
 						HoloTag.lastMessage = currentMessage;
 					UniversalDebug(message, (success) ? GH_RuntimeMessageLevel.Remark : GH_RuntimeMessageLevel.Error);
 				}
+			} else {
+				HoloTag.lastMessage = string.Empty;
+				UniversalDebug("Set 'Send' on true in HoloFab 'HoloConnect'", GH_RuntimeMessageLevel.Warning);
 			}
 			//////////////////////////////////////////////////////
 			// Output.

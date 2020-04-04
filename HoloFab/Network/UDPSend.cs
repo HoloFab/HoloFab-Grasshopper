@@ -1,6 +1,6 @@
-#define DEBUG
+// #define DEBUG
 #define DEBUGWARNING
-// #undef DEBUG
+#undef DEBUG
 // #undef DEBUGWARNING
 
 using System;
@@ -65,6 +65,7 @@ namespace HoloFab {
 				}
 				// Close.
 				this.client.Dispose();
+				this.client = null; // Good Practice?
 				// Acknowledge.
 				#if DEBUG
 				DebugUtilities.UniversalDebug(this.sourceName, "Data Sent!", ref this.debugMessages);
@@ -89,16 +90,14 @@ namespace HoloFab {
 			}
 			try {
 				// Open.
-				this.client = new UdpClient(remoteIP, this.remotePort);
+				this.client = new UdpClient(this.remoteIP, this.remotePort);
 				// Write.
 				this.client.Send(sendBuffer, sendBuffer.Length);
 				// Close.
 				this.client.Close();
 				// Acknowledge.
-				#if DEBUG
 				DebugUtilities.UniversalDebug(this.sourceName, "Data Sent!", ref this.debugMessages);
-				#endif
-				success = true;
+				this.success = true;
 				return;
 			} catch (Exception exception) {
 				// Exception.

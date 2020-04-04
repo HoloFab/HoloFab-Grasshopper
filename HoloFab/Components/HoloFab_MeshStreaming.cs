@@ -18,7 +18,7 @@ namespace HoloFab {
 		private string lastMessage = string.Empty;
 		// - settings
 		private static Color defaultColor = Color.Red;
-		private SourceType sourceType = SourceType.TCP;
+		public SourceType sourceType;
 		// - debugging
 		public static List<string> debugMessages = new List<string>();
 		// private static int cntr = 0;
@@ -28,6 +28,7 @@ namespace HoloFab {
 		/// </summary>
 		/// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
 		protected override void SolveInstance(IGH_DataAccess DA) {
+			//CheckType();
 			// Get inputs.
 			string message;
 			List<Mesh> inputMeshes = new List<Mesh> { };
@@ -93,6 +94,7 @@ namespace HoloFab {
 			: base("Mesh Streaming", "MS",
 			       "Streams 3D Mesh Data",
 			       "HoloFab", "Main") {
+			//CheckType();
 			UpdateMessage();
 		}
 		/// <summary>
@@ -145,6 +147,9 @@ namespace HoloFab {
 		private void UpdateMessage(){
 			this.Message = (this.sourceType == SourceType.TCP) ? "TCP" : "UDP";
 		}
+		//private void CheckType(){
+		//	this.sourceType = (this.Message == "TCP") ? SourceType.TCP : SourceType.UDP;
+		//}
 		// Common way to Communicate messages.
 		private void UniversalDebug(string message, GH_RuntimeMessageLevel messageType = GH_RuntimeMessageLevel.Remark) {
 			DebugUtilities.UniversalDebug(this.sourceName, message, ref MeshStreaming.debugMessages);

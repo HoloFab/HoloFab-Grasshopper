@@ -81,11 +81,13 @@ namespace HoloFab {
 			DA.SetDataList(1, UIReceiver.currentInts);
 			DA.SetDataList(2, UIReceiver.currentFloats);
 			//DA.SetData(3, UIReceiver.currentInput);
-            
+
 			// Expire Solution.
-			GH_Document document = this.OnPingDocument();
-			if (document != null)
-				document.ScheduleSolution(UIReceiver.expireDelay, ScheduleCallback);
+			if (connect.status) {
+				GH_Document document = this.OnPingDocument();
+				if (document != null)
+					document.ScheduleSolution(UIReceiver.expireDelay, ScheduleCallback);
+			}
 		}
 		private void ScheduleCallback(GH_Document document) {
 			ExpireSolution(false);
