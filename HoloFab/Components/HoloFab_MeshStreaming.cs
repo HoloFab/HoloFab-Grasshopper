@@ -7,23 +7,17 @@ using Grasshopper.Kernel;
 using Newtonsoft.Json;
 
 using HoloFab.CustomData;
+using System.Windows.Forms;
 
 namespace HoloFab
 {
     // A HoloFab class to send mesh to AR device via TCP.
     public class MeshStreaming : GH_Component
     {
-        //////////////////////////////////////////////////////////////////////////
-        // - history
         public static List<string> debugMessages = new List<string>();
-        private static string lastMessage = string.Empty;
-        // - settings
+        private string lastMessage = string.Empty;
         private static Color defaultColor = Color.Red;
-
-        /// <summary>
-        /// This is the method that actually does the work.
-        /// </summary>
-        /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
+        bool protocolIsTCP = true;
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // Get inputs.
@@ -36,13 +30,11 @@ namespace HoloFab
             // Check inputs.
             if ((inputColor.Count > 1) && (inputColor.Count != inputMeshes.Count))
             {
-                MeshStreaming.debugMessages.Add("Component: MeshStreaming: The number of Colors should be one or equal to the number of Mesh objects.");
                 this.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning,
                     inputColor.Count > inputMeshes.Count ?
                     "The number of Colors does not match the number of Mesh objects. Extra colors will be ignored." :
                     "The number of Colors does not match the number of Mesh objects. The last color will be repeated.");
             }
-
             // If connection open start acting.
             if (connect.status)
             {
@@ -56,23 +48,28 @@ namespace HoloFab
                 // Send mesh data.
                 string currentMessage = string.Empty;
                 byte[] bytes = EncodeUtilities.EncodeData("MESHSTREAMING", inputMeshData, out currentMessage);
-                if (MeshStreaming.lastMessage != currentMessage)
+                if (this.lastMessage != currentMessage)     // Is it required?
                 {
-
-                    MeshStreaming.lastMessage = currentMessage;
-                    string result = connect.tcp.Send(bytes);
-                    if (result != "Sent")
+                    this.lastMessage = currentMessage;
+                    if (this.protocolIsTCP)
                     {
-                        this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Sending failed. Check the connection and try again. \n" + result);
-                        return;
+                        string result = connect.tcp.Send(bytes);
+                        if (result != "Sent")
+                        {
+                            this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Sending failed. Check the connection and try again. \n" + result);
+                            return;
+                        }
+                        this.AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, result);
                     }
-                    this.AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, result);
-                    MeshStreaming.debugMessages.Add("Component: MeshStreaming: Mesh data sent over TCP.");
+                    else
+                    {
+                        UDPSend.Send(bytes, connect.remoteIP);
+                    }
                 }
             }
             else
             {
-                MeshStreaming.lastMessage = string.Empty;
+                this.lastMessage = string.Empty;
                 MeshStreaming.debugMessages.Add("Component: MeshStreaming: Set 'Send' on true in HoloFab 'HoloConnect'.");
                 this.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Set 'Send' on true in HoloFab 'HoloConnect'.");
             }
@@ -93,7 +90,9 @@ namespace HoloFab
             : base("Mesh Streaming", "MS",
                    "Streams 3D Mesh Data",
                    "HoloFab", "Main")
-        { }
+        {
+            this.Message = "TCP";
+        }
         /// <summary>
         /// Provides an Icon for every component that will be visible in the User Interface.
         /// Icons need to be 24x24 pixels.
@@ -126,6 +125,27 @@ namespace HoloFab
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             // pManager.AddTextParameter("Debug", "D", "Debug console.", GH_ParamAccess.item);
+        }
+
+        protected override void AppendAdditionalComponentMenuItems(ToolStripDropDown menu)
+        {
+            base.AppendAdditionalComponentMenuItems(menu);
+            Menu_AppendSeparator(menu);
+            Menu_AppendItem(menu, "Change Protocol(TCP/UDP)", SwitchProtocol, true);
+        }
+
+        private void SwitchProtocol(object sender, EventArgs e)
+        {
+            this.protocolIsTCP = !this.protocolIsTCP;
+            if (this.protocolIsTCP)
+            {
+                this.Message = "TCP";
+            }
+            else
+            {
+                this.Message = "UDP";
+            }
+            Grasshopper.Instances.RedrawCanvas();
         }
     }
 }

@@ -22,17 +22,15 @@ namespace HoloFab
         // - settings
         public bool status = false;
         private static string defaultIP = "127.0.0.1";
-        /// <summary>
-        /// This is the method that actually does the work.
-        /// </summary>
-        /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
+        TCPSend tcp = new TCPSend();
+        public FindServer fs = new FindServer();
+
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // Get inputs.
             string remoteIP = HoloConnect.defaultIP;
             if (!DA.GetData(0, ref remoteIP)) return;
-
-            TCPSend tcp = new TCPSend();
+            fs.StartScanning();
 
             if (this.status)
             {
@@ -109,9 +107,6 @@ namespace HoloFab
             pManager.AddGenericParameter("Connect", "Cn", "Connection object to be used in other HoloFab components.", GH_ParamAccess.list);
         }
     }
-
-
-
     public class Attributes_Custom : Grasshopper.Kernel.Attributes.GH_ComponentAttributes
     {
         HoloConnect comp;
@@ -130,12 +125,12 @@ namespace HoloFab
             System.Drawing.Rectangle rec1 = rec0;
             System.Drawing.Rectangle rec2 = rec0;
             rec1.Y = rec1.Bottom - 22;
-            rec2.Y = rec2.Bottom;
-            rec2.X -= 25;
+            rec2.Y = rec2.Bottom + 10;
+            // rec2.X -= 125;
 
             rec1.Height = 22;
-            rec2.Height = 33;
-            rec2.Width += 50;
+            rec2.Height = 100;
+            rec2.Width += 250;
 
             rec1.Inflate(-2, -2);
             rec2.Inflate(-2, -2);
@@ -147,7 +142,6 @@ namespace HoloFab
         }
         private System.Drawing.Rectangle ButtonBounds { get; set; }
         private System.Drawing.Rectangle TextBounds { get; set; }
-
         protected override void Render(GH_Canvas canvas, System.Drawing.Graphics graphics, GH_CanvasChannel channel)
         {
             base.Render(canvas, graphics, channel);
@@ -159,7 +153,12 @@ namespace HoloFab
                     a => a.AddressFamily == AddressFamily.InterNetwork);
                 GH_Capsule button = GH_Capsule.CreateTextCapsule(ButtonBounds, ButtonBounds, GH_Palette.Black, comp.status ? "Disconnect" : "Connect", 2, 0);
                 button.Render(graphics, Selected, Owner.Locked, false);
-                graphics.DrawString("Machine IP:\n" + ipv4Addresse.ToString(), GH_FontServer.NewFont(FontFamily.GenericMonospace, 6, FontStyle.Regular), Brushes.Black, TextBounds, GH_TextRenderingConstants.CenterCenter);
+                string devices = "Available Devices:\n\n";
+                for (int ii = 0; ii < comp.fs.devices.Count; ii++)
+                {
+                    devices += comp.fs.devices[ii].name + "\n(" + comp.fs.devices[ii].remoteIP + ")\n\n";
+                }
+                graphics.DrawString(devices, GH_FontServer.NewFont(FontFamily.GenericMonospace, 8, FontStyle.Regular), Brushes.Black, TextBounds);
                 button.Dispose();
             }
         }
