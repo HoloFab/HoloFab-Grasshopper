@@ -24,22 +24,18 @@ namespace HoloFab
         private static string defaultIP = "127.0.0.1";
         TCPSend tcp = new TCPSend();
         public FindServer fs = new FindServer();
-        /// <summary>
-        /// This is the method that actually does the work.
-        /// </summary>
-        /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
+
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // Get inputs.
             string remoteIP = HoloConnect.defaultIP;
             if (!DA.GetData(0, ref remoteIP)) return;
-
             fs.StartScanning();
 
             if (this.status)
             {
                 // Start TCP
-                if (!this.tcp.connect(remoteIP))
+                if (!tcp.connect(remoteIP))
                 {
                     this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Connection failed, please check your network connection and try again.");
                     return;
@@ -51,7 +47,7 @@ namespace HoloFab
             }
             else
             {
-                this.tcp.disconnect();
+                tcp.disconnect();
             }
 
             // Process data.

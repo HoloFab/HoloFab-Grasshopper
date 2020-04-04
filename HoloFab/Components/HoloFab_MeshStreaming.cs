@@ -18,7 +18,6 @@ namespace HoloFab
         private string lastMessage = string.Empty;
         private static Color defaultColor = Color.Red;
         bool protocolIsTCP = true;
-
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // Get inputs.
