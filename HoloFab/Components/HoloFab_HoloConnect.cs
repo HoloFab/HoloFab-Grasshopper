@@ -24,6 +24,7 @@ namespace HoloFab {
 		public bool status = false;
 		private Connection connect;
 		private static string defaultIP = "127.0.0.1";
+		public FindServer deviceFinder = new FindServer();
         
 		/// <summary>
 		/// This is the method that actually does the work.
@@ -34,7 +35,7 @@ namespace HoloFab {
 			string remoteIP = HoloConnect.defaultIP;
 			if (!DA.GetData(0, ref remoteIP)) return;
 			//////////////////////////////////////////////////////
-			FindServer.StartScanning();
+			deviceFinder.StartScanning();
 			if (this.connect == null)
 				this.connect = new Connection(remoteIP);
             
@@ -154,10 +155,10 @@ namespace HoloFab {
 				//                                         a => a.AddressFamily == AddressFamily.InterNetwork);
 				string message = "Devices: ";
 				if (FindServer.devices.Count >0)
-					foreach (HoloDevice device in FindServer.devices.Values)
+					foreach (HoloDevice device in this.deviceFinder.devices.Values)
 						message += "\n" + device.ToString();
 				else
-					message += "(could not be found)";
+					message += "(not found)";
 				graphics.DrawString(message, GH_FontServer.NewFont(FontFamily.GenericMonospace, 6, FontStyle.Regular),
 				                    Brushes.Black, this.BoundsText, GH_TextRenderingConstants.CenterCenter);
 			}

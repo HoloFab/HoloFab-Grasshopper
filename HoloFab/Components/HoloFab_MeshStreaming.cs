@@ -21,7 +21,6 @@ namespace HoloFab {
 		public SourceType sourceType;
 		// - debugging
 		public static List<string> debugMessages = new List<string>();
-		// private static int cntr = 0;
         
 		/// <summary>
 		/// This is the method that actually does the work.
@@ -59,8 +58,6 @@ namespace HoloFab {
 				if (this.lastMessage != currentMessage) {
 					bool success = false;
 					if (this.sourceType == SourceType.TCP) {
-						// cntr += 1;
-						// this.AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Sending: " + cntr.ToString());
 						connect.tcpSender.Send(bytes);
 						success = connect.tcpSender.success;
 						message = connect.tcpSender.debugMessages[connect.tcpSender.debugMessages.Count-1];
@@ -147,9 +144,6 @@ namespace HoloFab {
 		private void UpdateMessage(){
 			this.Message = (this.sourceType == SourceType.TCP) ? "TCP" : "UDP";
 		}
-		//private void CheckType(){
-		//	this.sourceType = (this.Message == "TCP") ? SourceType.TCP : SourceType.UDP;
-		//}
 		// Common way to Communicate messages.
 		private void UniversalDebug(string message, GH_RuntimeMessageLevel messageType = GH_RuntimeMessageLevel.Remark) {
 			DebugUtilities.UniversalDebug(this.sourceName, message, ref MeshStreaming.debugMessages);
