@@ -19,7 +19,7 @@ namespace HoloFab {
 		}
 		//Return a string identifying you or your company.
 		public override string AuthorName {
-			get { return "Armin Akbari, Daniil Koshelyuk, Ardeshir Talaei, Arman Najari."; }
+			get { return "Armin Akbari, Daniil Koshelyuk, Ardeshir Talaei."; }
 		}
 		//Return a string representing your preferred contact details.
 		public override string AuthorContact {

@@ -79,6 +79,7 @@
     <Compile Include="Types\CustomRobot.cs" />
     <Compile Include="Types\CustomClient.cs" />
     <Compile Include="Utilities\EncodeUtilities.cs" />
+    <Compile Include="Utilities\DebugUtilities.cs" />
     <Compile Include="Utilities\MeshUtilities.cs" />
     <Compile Include="Utilities\NetworkUtilities.cs" />
     <Compile Include="Components\HoloFab_Info.cs" />

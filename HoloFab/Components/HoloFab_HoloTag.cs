@@ -10,6 +10,7 @@ using HoloFab.CustomData;
 namespace HoloFab {
 	public class HoloTag : GH_Component {
 		//////////////////////////////////////////////////////////////////////////
+		private string sourceName = "HoloTag Component";
 		// - history
 		public static List<string> debugMessages = new List<string>();
 		private static string lastMessage = string.Empty;
@@ -24,7 +25,7 @@ namespace HoloFab {
 			List<Point3d> inputTextLocations = new List<Point3d>();
 			List<Color> inputTextColor = new List<Color> { };
 			List<double> inputTextSize = new List<double>();
-			Connection connect = new Connection();
+			Connection connect = null;
 			if (!DA.GetDataList(0, inputText)) return;
 			if (!DA.GetDataList(1, inputTextLocations)) return;
 			if (!DA.GetDataList(2, inputTextSize)) return;
@@ -32,22 +33,24 @@ namespace HoloFab {
 			if (!DA.GetData(4, ref connect)) return;
 			// Check inputs.
 			if(inputTextLocations.Count != inputText.Count) {
-				HoloTag.debugMessages.Add("Component: HoloTag: The number of 'tag locations' and 'tag texts' should be equal.");
+				UniversalDebug("The number of 'tag locations' and 'tag texts' should be equal.",
+				               GH_RuntimeMessageLevel.Error);
 				return;
 			}
 			if ((inputTextSize.Count > 1) && (inputTextSize.Count != inputText.Count)) {
-				HoloTag.debugMessages.Add("Component: HoloTag: The number of 'tag text sizes' should be one or equal to one or the number of 'tag texts'.");
+				UniversalDebug("The number of 'tag text sizes' should be one or equal to one or the number of 'tag texts'.",
+				               GH_RuntimeMessageLevel.Error);
 				return;
 			}
 			if ((inputTextColor.Count > 1) && (inputTextColor.Count != inputText.Count)) {
-				HoloTag.debugMessages.Add("Component: HoloTag: The number of 'tag text colors' should be one or equal to one or the number of 'tag texts'.");
+				UniversalDebug("The number of 'tag text colors' should be one or equal to one or the number of 'tag texts'.",
+				               GH_RuntimeMessageLevel.Error);
 				return;
 			}
-            
+			//////////////////////////////////////////////////////
 			// Process data.
 			if (connect.status) {
 				// If connection open start acting.
-                
 				List<string> currentTexts = new List<string>(){};
 				List<float[]> currentTextLocations = new List<float[]>(){};
 				List<float> currentTextSizes = new List<float>(){};
@@ -63,19 +66,21 @@ namespace HoloFab {
 				TagData tags = new TagData(currentTexts, currentTextLocations, currentTextSizes, currentTextColors);
                 
 				// Send tag data.
-				string currentMessage = string.Empty;
-				byte[] bytes = EncodeUtilities.EncodeData("HOLOTAG", tags, out currentMessage);
+				byte[] bytes = EncodeUtilities.EncodeData("HOLOTAG", tags, out string currentMessage);
 				if (HoloTag.lastMessage != currentMessage) {
-					HoloTag.lastMessage = currentMessage;
-					connect.udpSender.Send(bytes, connect.remoteIP);
-					HoloTag.debugMessages.Add("Component: HoloTag: Mesh data sent over UDP.");
+					connect.udpSender.Send(bytes);
+					bool success = connect.udpSender.success;
+					string message = connect.udpSender.debugMessages[connect.udpSender.debugMessages.Count-1];
+					if (success)
+						HoloTag.lastMessage = currentMessage;
+					UniversalDebug(message, (success) ? GH_RuntimeMessageLevel.Remark : GH_RuntimeMessageLevel.Error);
 				}
 			}
-            
+			//////////////////////////////////////////////////////
 			// Output.
 			// DA.SetData(0, HoloTag.debugMessages[HoloTag.debugMessages.Count-1]);
 		}
-		//////////////////////////////////////////////////////////////////////////
+		////////////////////////////////////////////////////////////////////////
 		/// <summary>
 		/// Initializes a new instance of the HoloTag class.
 		/// Each implementation of GH_Component must provide a public
@@ -116,6 +121,12 @@ namespace HoloFab {
 		/// </summary>
 		protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager) {
 			//pManager.AddTextParameter("Debug", "D", "Debug console.", GH_ParamAccess.item);
+		}
+		////////////////////////////////////////////////////////////////////////
+		// Common way to Communicate messages.
+		private void UniversalDebug(string message, GH_RuntimeMessageLevel messageType = GH_RuntimeMessageLevel.Remark) {
+			DebugUtilities.UniversalDebug(this.sourceName, message, ref HoloTag.debugMessages);
+			this.AddRuntimeMessage(messageType, message);
 		}
 	}
 }

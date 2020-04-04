@@ -11,6 +11,7 @@ using HoloFab.CustomData;
 namespace HoloFab {
 	public class RobotStreaming : GH_Component {
 		//////////////////////////////////////////////////////////////////////////
+		private string sourceName = "Robot Streaming Component";
 		// - history
 		public static List<string> debugMessages = new List<string>();
 		private static string lastMessage = string.Empty;
@@ -22,27 +23,29 @@ namespace HoloFab {
 		protected override void SolveInstance(IGH_DataAccess DA) {
 			// Get inputs.
 			List<RobotData> inputRobots = new List<RobotData>();
-			Connection connect = new Connection();
+			Connection connect = null;
 			if (!DA.GetDataList(0, inputRobots)) return;
 			if (!DA.GetData(1, ref connect)) return;
-            
+			//////////////////////////////////////////////////////
 			// Process data.
 			if (connect.status) {
 				// If connection open start acting.
                 
 				// Send robot data.
-				string currentMessage = string.Empty;
-				byte[] bytes = EncodeUtilities.EncodeData("HOLOBOTS", inputRobots.ToArray(), out currentMessage);
+				byte[] bytes = EncodeUtilities.EncodeData("HOLOBOTS", inputRobots.ToArray(), out string currentMessage);
 				if (RobotStreaming.lastMessage != currentMessage) {
-					RobotStreaming.lastMessage = currentMessage;
 					connect.tcpSender.Send(bytes);
-					RobotStreaming.debugMessages.Add("Component: Robot Streaming: Robot data sent over TCP.");
+					bool success = connect.tcpSender.success;
+					string message = connect.tcpSender.debugMessages[connect.tcpSender.debugMessages.Count-1];
+					if (success)
+						RobotStreaming.lastMessage = currentMessage;
+					UniversalDebug(message, (success) ? GH_RuntimeMessageLevel.Remark : GH_RuntimeMessageLevel.Error);
 				}
 			} else {
 				RobotStreaming.lastMessage = string.Empty;
-				RobotStreaming.debugMessages.Add("Component: Robot Streaming: Set 'Send' on true in HoloFab 'HoloConnect'.");
+				UniversalDebug("Set 'Send' on true in HoloFab 'HoloConnect'.", GH_RuntimeMessageLevel.Warning);
 			}
-            
+			//////////////////////////////////////////////////////
 			// Output.
 			// DA.SetData(0, Positioner.debugMessages[Positioner.debugMessages.Count-1]);
 		}
@@ -85,6 +88,12 @@ namespace HoloFab {
 		/// </summary>
 		protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager) {
 			//pManager.AddTextParameter("Debug", "D", "Debug console.", GH_ParamAccess.item);
+		}
+		////////////////////////////////////////////////////////////////////////
+		// Common way to Communicate messages.
+		private void UniversalDebug(string message, GH_RuntimeMessageLevel messageType = GH_RuntimeMessageLevel.Remark) {
+			DebugUtilities.UniversalDebug(this.sourceName, message, ref RobotStreaming.debugMessages);
+			this.AddRuntimeMessage(messageType, message);
 		}
 	}
 }

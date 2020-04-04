@@ -10,6 +10,7 @@ namespace HoloFab {
 	// A HoloFab class to receive UI elements from AR device.
 	public class UIReceiver : GH_Component {
 		//////////////////////////////////////////////////////////////////////////
+		private string sourceName = "UI Receiving Component";
 		// - currents
 		private static string currentInput;
 		private static List<bool> currentBools = new List<bool>();
@@ -28,39 +29,42 @@ namespace HoloFab {
 		/// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
 		protected override void SolveInstance(IGH_DataAccess DA) {
 			// Get inputs.
-			Connection connect = new Connection();
+			Connection connect = null;
 			if (!DA.GetData(0, ref connect)) return;
-            
+			//////////////////////////////////////////////////////
 			// Process data.
 			if (connect.status) {
 				// If connection open start acting.
 				if (!UIReceiver.flagProcessed) {
 					UIReceiver.flagProcessed = true;
 					// Send local IPAddress for device to communicate back.
-					string currentMessage;
-					byte[] bytes = EncodeUtilities.EncodeData("IPADDRESS", NetworkUtilities.LocalIPAddress(), out currentMessage);
-					connect.udpSender.Send(bytes, connect.remoteIP);
-					UIReceiver.debugMessages.Add("Component: UIReceiver: Sent local IP.");
+					byte[] bytes = EncodeUtilities.EncodeData("IPADDRESS", NetworkUtilities.LocalIPAddress(), out string currentMessage);
+					connect.udpSender.Send(bytes);
+					bool success = connect.udpSender.success;
+					UniversalDebug("Sent local IP.");
 				}
                 
 				// Prepare to receive UI data.
 				try {
-					// Start Listening.
-					connect.udpReceiver.TryStartConnection();
-					UIReceiver.currentInput = connect.udpReceiver.dataMessages[connect.udpReceiver.dataMessages.Count - 1];
-					if (UIReceiver.lastInputs != currentInput) {
-						UIReceiver.lastInputs = currentInput;
-						// If any new data received - process it.
-						UIData data = new UIData();
-						data = JsonConvert.DeserializeObject<UIData>(currentInput);
-						UIReceiver.currentBools = new List<bool> (data.bools);
-						UIReceiver.currentInts = new List<int> (data.ints);
-						UIReceiver.currentFloats = new List<float> (data.floats);
-						UIReceiver.debugMessages.Add("Component: UIReceiver: Data Received!");
+					if (!connect.udpReceiver.flagDataRead) {
+						connect.udpReceiver.flagDataRead = true;
+						UIReceiver.currentInput = connect.udpReceiver.dataMessages[connect.udpReceiver.dataMessages.Count - 1];
+						if (UIReceiver.lastInputs != currentInput) {
+							currentInput = EncodeUtilities.StripSplitter(currentInput);
+							UIReceiver.lastInputs = currentInput;
+							UniversalDebug("New Message without Message Splitter removed: " + currentInput);
+							// If any new data received - process it.
+							UIData data = JsonConvert.DeserializeObject<UIData>(currentInput);
+							UIReceiver.currentBools = new List<bool> (data.bools);
+							UIReceiver.currentInts = new List<int> (data.ints);
+							UIReceiver.currentFloats = new List<float> (data.floats);
+							UniversalDebug("Data Received!");
+						} else
+							UniversalDebug("Data not Received!", GH_RuntimeMessageLevel.Warning);
 					} else
-						UIReceiver.debugMessages.Add("Component: UIReceiver: Data not Received!");
+						UniversalDebug("No data received.");
 				} catch {
-					UIReceiver.debugMessages.Add("Component: UIReceiver: Error Processing Data.");
+					UniversalDebug("Error Processing Data.", GH_RuntimeMessageLevel.Error);
 				}
 			} else {
 				// If connection disabled - stop receiving.
@@ -69,10 +73,9 @@ namespace HoloFab {
 				UIReceiver.currentBools = new List<bool>();
 				UIReceiver.currentInts = new List<int>();
 				UIReceiver.currentFloats = new List<float>();
-				connect.udpReceiver.StopConnection();
-				UIReceiver.debugMessages.Add("Component: UIReceiver: Set 'Send' on true in HoloFab 'HoloConnect'.");
+				UniversalDebug("Set 'Send' on true in HoloFab 'HoloConnect'", GH_RuntimeMessageLevel.Warning);
 			}
-            
+			//////////////////////////////////////////////////////
 			// Output.
 			DA.SetDataList(0, UIReceiver.currentBools);
 			DA.SetDataList(1, UIReceiver.currentInts);
@@ -129,6 +132,12 @@ namespace HoloFab {
 			pManager.AddIntegerParameter("Counters", "C", "Integer values coming from UI.", GH_ParamAccess.list);
 			pManager.AddNumberParameter("Sliders", "S", "Float values coming from UI.", GH_ParamAccess.list);
 			//pManager.AddTextParameter("Debug", "D", "Debug console.", GH_ParamAccess.item);
+		}
+		////////////////////////////////////////////////////////////////////////
+		// Common way to Communicate messages.
+		private void UniversalDebug(string message, GH_RuntimeMessageLevel messageType = GH_RuntimeMessageLevel.Remark) {
+			DebugUtilities.UniversalDebug(this.sourceName, message, ref UIReceiver.debugMessages);
+			this.AddRuntimeMessage(messageType, message);
 		}
 	}
 }

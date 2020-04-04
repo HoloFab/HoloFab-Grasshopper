@@ -7,3 +7,12 @@ C:\Users\Ardoo\Desktop\HoloFabGH\HoloFab\obj\Debug\HoloFab.csproj.CoreCompileInp
 C:\Users\Ardoo\Desktop\HoloFabGH\HoloFab\obj\Debug\HoloFab.csproj.CopyComplete
 C:\Users\Ardoo\Desktop\HoloFabGH\HoloFab\obj\Debug\HoloFab.dll
 C:\Users\Ardoo\Desktop\HoloFabGH\HoloFab\obj\Debug\HoloFab.pdb
+C:\_UserFiles\1_Work\30_HoloFab\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.csprojAssemblyReference.cache
+C:\_UserFiles\1_Work\30_HoloFab\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.Properties.Resources.resources
+C:\_UserFiles\1_Work\30_HoloFab\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.csproj.GenerateResource.cache
+C:\_UserFiles\1_Work\30_HoloFab\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.csproj.CoreCompileInputs.cache
+C:\_UserFiles\1_Work\30_HoloFab\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.dll
+C:\_UserFiles\1_Work\30_HoloFab\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.pdb
+C:\Users\Daniil\AppData\Roaming\Grasshopper\Libraries\HoloFab.dll
+C:\Users\Daniil\AppData\Roaming\Grasshopper\Libraries\HoloFab.pdb
+C:\_UserFiles\1_Work\30_HoloFab\HoloFab-Grasshopper\HoloFab\obj\Debug\HoloFab.csproj.CopyComplete

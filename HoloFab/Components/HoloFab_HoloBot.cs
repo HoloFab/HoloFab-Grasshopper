@@ -12,6 +12,7 @@ namespace HoloFab {
 	// A HoloFab class to create Robot object used in other HoloFab components.
 	public class HoloBot : GH_Component {
 		//////////////////////////////////////////////////////////////////////////
+		private string sourceName = "HoloBot Component";
 		// - history
 		public static List<string> debugMessages = new List<string>();
 		// - settings
@@ -33,35 +34,15 @@ namespace HoloFab {
 			DA.GetData(1, ref inputEndeffectorMesh);
 			if (!DA.GetData(2, ref inputRobotID)) return;
 			if (!DA.GetData(3, ref inputPlane)) return;
-            
+			//////////////////////////////////////////////////////
 			// Process data.
 			inputEndeffectorMesh.Weld(Math.PI);
 			EndeffectorData endEffector = new EndeffectorData(MeshUtilities.EncodeMesh(inputEndeffectorMesh));
 			RobotData robot = new RobotData(inputRobotID, inputRobotName, endEffector, EncodeUtilities.EncodePlane(inputPlane));
-			HoloBot.debugMessages.Add("Component: HoloBot: Robot Object Created.");
-            
+			UniversalDebug("Robot Object Created.");
+			//////////////////////////////////////////////////////
 			// Output.
 			DA.SetData(0, robot);
-		}
-        
-		private void RobotOptionList() {
-			// TODO: check instead if alreeady set.
-			// Create robot Option List.
-			GH_ValueList robotValueList = new GH_ValueList();
-			robotValueList.CreateAttributes();
-			robotValueList.Attributes.Pivot = new PointF(this.Attributes.Pivot.X-300, this.Attributes.Pivot.Y-41);
-			robotValueList.ListItems.Clear();
-			robotValueList.NickName = "Robot";
-            
-			foreach (string robotName in HoloBot.listRobotNames) {
-				GH_ValueListItem item = new GH_ValueListItem(robotName, "\""+robotName+"\"");
-				robotValueList.ListItems.Add(item);
-			}
-            
-			GH_Document document = this.OnPingDocument();
-			document.AddObject(robotValueList, false);
-			this.Params.Input[0].AddSource(robotValueList);
-			this.Params.Input[0].CollectData();
 		}
 		//////////////////////////////////////////////////////////////////////////
 		/// <summary>
@@ -103,13 +84,39 @@ namespace HoloFab {
 			pManager[1].Optional = true;
 			pManager[2].Optional = true;
 			pManager[3].Optional = true;
-			//pManager[3].Optional = true;
 		}
 		/// <summary>
 		/// Registers all the output parameters for this component.
 		/// </summary>
 		protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager) {
 			pManager.AddGenericParameter("HoloBot", "Hb", "A HoloFab holobographic robot object.", GH_ParamAccess.item);
+		}
+		////////////////////////////////////////////////////////////////////////
+		// Create a drop down to select supported robot if no robot selected.
+		private void RobotOptionList() {
+			// TODO: check instead if alreeady set.
+			// Create robot Option List.
+			GH_ValueList robotValueList = new GH_ValueList();
+			robotValueList.CreateAttributes();
+			robotValueList.Attributes.Pivot = new PointF(this.Attributes.Pivot.X-300, this.Attributes.Pivot.Y-41);
+			robotValueList.ListItems.Clear();
+			robotValueList.NickName = "Robot";
+			// Add supported robot names.
+			foreach (string robotName in HoloBot.listRobotNames) {
+				GH_ValueListItem item = new GH_ValueListItem(robotName, "\""+robotName+"\"");
+				robotValueList.ListItems.Add(item);
+			}
+			// Update grasshopper document.
+			GH_Document document = this.OnPingDocument();
+			document.AddObject(robotValueList, false);
+			this.Params.Input[0].AddSource(robotValueList);
+			this.Params.Input[0].CollectData();
+		}
+		////////////////////////////////////////////////////////////////////////
+		// Common way to Communicate messages.
+		private void UniversalDebug(string message, GH_RuntimeMessageLevel messageType = GH_RuntimeMessageLevel.Remark) {
+			DebugUtilities.UniversalDebug(this.sourceName, message, ref HoloBot.debugMessages);
+			this.AddRuntimeMessage(messageType, message);
 		}
 	}
 }
