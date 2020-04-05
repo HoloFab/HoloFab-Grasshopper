@@ -35,12 +35,13 @@ namespace HoloFab {
 	// Part Shared with Unity.
 	// Tools for processing robit data.
 	public static partial class EncodeUtilities {
+		public static string headerSplitter = "|";
 		public static string messageSplitter = "~";
 		// Encode data into a json readable byte array.
 		public static byte[] EncodeData(string header, System.Object item, out string message){
 			string output = JsonConvert.SerializeObject(item);
 			if (header != string.Empty)
-				message = header + "|" + output;
+				message = header + EncodeUtilities.headerSplitter + output;
 			else
 				message = output;
 			message += EncodeUtilities.messageSplitter; // End Message Char

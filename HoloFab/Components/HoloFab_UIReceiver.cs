@@ -59,14 +59,23 @@ namespace HoloFab {
 							currentInput = EncodeUtilities.StripSplitter(currentInput);
 							UIReceiver.lastInputs = currentInput;
 							UniversalDebug("New Message without Message Splitter removed: " + currentInput);
-							// If any new data received - process it.
-							UIData data = JsonConvert.DeserializeObject<UIData>(currentInput);
-							UIReceiver.currentBools = new List<bool> (data.bools);
-							UIReceiver.currentInts = new List<int> (data.ints);
-							UIReceiver.currentFloats = new List<float> (data.floats);
-							UniversalDebug("Data Received!");
+							string[] messageComponents = currentInput.Split(new string[] {EncodeUtilities.headerSplitter}, 2, StringSplitOptions.RemoveEmptyEntries);
+							if (messageComponents.Length > 1) {
+								string header = messageComponents[0], content = messageComponents[1];
+								UniversalDebug("Header: " + header + ", content: " + content);
+								if (header == "UIDATA") {
+									// If any new data received - process it.
+									UIData data = JsonConvert.DeserializeObject<UIData>(content);
+									UIReceiver.currentBools = new List<bool> (data.bools);
+									UIReceiver.currentInts = new List<int> (data.ints);
+									UIReceiver.currentFloats = new List<float> (data.floats);
+									UniversalDebug("Data Received!");
+								} else
+									UniversalDebug("Header Not Recognized!", GH_RuntimeMessageLevel.Warning);
+							} else
+								UniversalDebug("Data not Received!", GH_RuntimeMessageLevel.Warning);
 						} else
-							UniversalDebug("Data not Received!", GH_RuntimeMessageLevel.Warning);
+							UniversalDebug("Improper Message!", GH_RuntimeMessageLevel.Warning);
 					} else
 						UniversalDebug("No data received.");
 				} catch {

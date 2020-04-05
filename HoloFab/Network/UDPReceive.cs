@@ -1,7 +1,7 @@
-#define DEBUG
+// #define DEBUG
 // #define DEBUG2
 #define DEBUGWARNING
-// #undef DEBUG
+#undef DEBUG
 #undef DEBUG2
 // #undef DEBUGWARNING
 
@@ -25,6 +25,8 @@ namespace HoloFab {
 	public class UDPReceive {
 		// Local Port
 		private int localPort = 8055;
+		// Force the messages depite history.
+		public bool flagForce = true;
         
 		// Network Objects:
 		#if WINDOWS_UWP
@@ -43,8 +45,12 @@ namespace HoloFab {
 		public List<string> debugMessages = new List<string>();
 		// - received data
 		public List<string> dataMessages = new List<string>();
+		// - addresses of incomiing connections (corresponding to data)
+		public List<string> connectionHistory = new List<string>();
 		// Flag to be raised on data recepcion.
 		public bool flagDataRead = true;
+        
+		public Action OnReceive;
         
 		// Constructor.
 		public UDPReceive(int _localPort=8055){
@@ -52,6 +58,10 @@ namespace HoloFab {
 			this.localPort = _localPort;
 			this.debugMessages = new List<string>();
 			this.dataMessages = new List<string>();
+			this.connectionHistory = new List<string>();
+			Disconnect();
+		}
+		~UDPReceive(){
 			Disconnect();
 		}
         
@@ -104,9 +114,13 @@ namespace HoloFab {
 				#if DEBUG2
 				DebugUtilities.UniversalDebug(this.sourceName, "Total Data found: " + receiveString, ref this.debugMessages);
 				#endif
-				if ((this.dataMessages.Count == 0) || (this.dataMessages[this.dataMessages.Count-1] != receiveString)) {
+				if ((this.dataMessages.Count == 0) ||
+				    (this.flagForce || (this.dataMessages[this.dataMessages.Count-1] != receiveString))) {
 					this.dataMessages.Add(receiveString);
+					this.connectionHistory.Add(args.RemoteAddress.RawName);
 					this.flagDataRead = false;
+					if (OnReceive != null)
+						OnReceive();
 				} else {
 					#if DEBUG2
 					DebugUtilities.UniversalDebug(this.sourceName, "Message already added.", ref this.debugMessages);
@@ -117,9 +131,6 @@ namespace HoloFab {
 		//////////////////////////////////////////////////////////////////////////
 		#else
 		private void StartReceiving(){
-			// Reset.
-			this.debugMessages = new List<string>();
-			this.dataMessages = new List<string>();
 			// Start the thread.
 			this.receiveThread = new Thread(new ThreadStart(ReceiveData));
 			this.receiveThread.IsBackground = true;
@@ -167,9 +178,13 @@ namespace HoloFab {
 							#if DEBUG2
 							DebugUtilities.UniversalDebug(this.sourceName, "Total Data found: " + receiveString, ref this.debugMessages);
 							#endif
-							if ((this.dataMessages.Count == 0) || (this.dataMessages[this.dataMessages.Count-1] != receiveString)) {
+							if ((this.dataMessages.Count == 0) ||
+							    (this.flagForce || (this.dataMessages[this.dataMessages.Count-1] != receiveString))) {
 								this.dataMessages.Add(receiveString);
+								this.connectionHistory.Add(anyIP.Address.ToString());
 								this.flagDataRead = false;
+								if (OnReceive != null)
+									OnReceive();
 							} else {
 								#if DEBUG2
 								DebugUtilities.UniversalDebug(this.sourceName, "Message already added.", ref this.debugMessages);
@@ -188,11 +203,9 @@ namespace HoloFab {
 				#if DEBUGWARNING
 				DebugUtilities.UniversalWarning(this.sourceName, "Exception: " + exception.ToString(), ref this.debugMessages);
 				#endif
+			} finally {
+				this.Disconnect();
 			}
-			// TODO: Shouldn't it close in case of error?
-			// finally {
-			// 	this.StopConnection();
-			// }
 		}
 		#endif
 	}

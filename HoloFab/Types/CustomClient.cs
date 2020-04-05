@@ -9,8 +9,8 @@ namespace HoloFab {
 			public string name;
 			public DateTime lastCall { get; set; }
             
-			public HoloDevice(IPEndPoint _clientEP, string _name) {
-				this.remoteIP = _clientEP.Address.ToString();
+			public HoloDevice(string _address, string _name) {
+				this.remoteIP = _address;
 				this.name = _name;
 				this.lastCall = DateTime.Now;
 			}

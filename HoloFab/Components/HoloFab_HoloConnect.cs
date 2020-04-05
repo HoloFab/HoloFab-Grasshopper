@@ -25,7 +25,7 @@ namespace HoloFab {
 		// - settings
 		public bool status = false;
 		private Connection connect;
-		public FindServer deviceFinder = new FindServer();
+		public static FindServer deviceFinder;
 		// - debugging
 		#if DEBUG
 		private string sourceName = "HoloConnect Component";
@@ -37,11 +37,15 @@ namespace HoloFab {
 		/// </summary>
 		/// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
 		protected override void SolveInstance(IGH_DataAccess DA) {
+			if (HoloConnect.deviceFinder == null) {
+				HoloConnect.deviceFinder = new FindServer();
+				HoloConnect.deviceFinder.StartScanning();
+			}
+			HoloConnect.deviceFinder.RefreshList();
 			// Get inputs.
 			string remoteIP = this.defaultIP;
 			if (!DA.GetData(0, ref remoteIP)) return;
 			//////////////////////////////////////////////////////
-			deviceFinder.StartScanning();
 			if (this.connect == null)
 				this.connect = new Connection(remoteIP);
             
@@ -73,7 +77,7 @@ namespace HoloFab {
 		public HoloConnect()
 			: base("Create Connection", "C",
 			       "Sets the Ip address of receiver",
-			       "HoloFab", "Communication") { }
+			       "HoloFab", "Communication") {}
         
 		public override void CreateAttributes() {
 			this.m_attributes = new HoloConnect_Attributes_Custom(this);
@@ -168,8 +172,8 @@ namespace HoloFab {
 				// IPAddress ipv4Addresse = Array.FindLast(Dns.GetHostEntry(string.Empty).AddressList,
 				//                                         a => a.AddressFamily == AddressFamily.InterNetwork);
 				string message = "Devices: ";
-				if (this.component.deviceFinder.devices.Count >0)
-					foreach (HoloDevice device in this.component.deviceFinder.devices.Values)
+				if (HoloConnect.deviceFinder.devices.Count > 0)
+					foreach (HoloDevice device in HoloConnect.deviceFinder.devices.Values)
 						message += "\n" + device.ToString();
 				else
 					message += "(not found)";

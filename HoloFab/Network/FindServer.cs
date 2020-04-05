@@ -18,57 +18,54 @@ using Grasshopper.Kernel.Attributes;
 namespace HoloFab {
 	public class FindServer {
 		// Network Settings
-		private int localPort = 8888;
+		private int localPortOverride = 8888;
 		// Thread Object Reference.
-		private Thread receiveThread = null;
+		private static UDPReceive receiver;
 		// Client List
 		public Dictionary<string, HoloDevice> devices = new Dictionary<string, HoloDevice>();
-		private int expireDelay = 700;
+		//private int expireDelay = 700;
 		private int expireDeivceDelay = 4000;
+        
+		public FindServer() {
+			try {
+				FindServer.receiver = new UDPReceive(this.localPortOverride);
+				FindServer.receiver.OnReceive = UpdateDevices;
+			} catch {}
+		}
         
 		// A Function to start searching for devices
 		public void StartScanning() {
-			if (this.receiveThread == null || !this.receiveThread.IsAlive) {
-				// Start the thread.
-				this.receiveThread = new Thread(new ThreadStart(DiscoverClients));
-				this.receiveThread.IsBackground = true;
-				this.receiveThread.Start();
-			}
+			if (FindServer.receiver != null)
+				FindServer.receiver.Connect();
 		}
-		// An infinite loop looking for incoming connections and noting or expiring old ones.
-		private void DiscoverClients() {
-			// Start continuously looking for devices requesting in the network.
-			IPEndPoint clientEP = new IPEndPoint(IPAddress.Any, 0);
-			UdpClient server;
+        
+		public void UpdateDevices() {
 			string clientAddress, clientRequest;
-			byte[] clientRequestData;
-			while (true) {
-				server = new UdpClient(this.localPort);
-				server.Client.ReceiveTimeout = this.expireDelay;
-                
-				try {
-					clientAddress = clientEP.Address.ToString();
-					clientRequestData = server.Receive(ref clientEP);
-					clientRequest = Encoding.ASCII.GetString(clientRequestData);
-                    
-					Console.WriteLine("Recived {0} from {1}, sending response", clientRequest, clientAddress);
-					if (!this.devices.ContainsKey(clientAddress)) {
-						this.devices.Add(clientAddress, new HoloDevice(clientEP, clientRequest));
-						Grasshopper.Instances.InvalidateCanvas();
-					} else {
-						this.devices[clientAddress].lastCall = DateTime.Now;
-					}
-				} catch {} finally {
-					server.Close();
+            
+			clientAddress = FindServer.receiver.connectionHistory[FindServer.receiver.connectionHistory.Count-1].ToString();
+			clientRequest = FindServer.receiver.dataMessages[FindServer.receiver.dataMessages.Count-1];
+            
+			Console.WriteLine("Recived {0} from {1}, sending response", clientRequest, clientAddress);
+			if (!this.devices.ContainsKey(clientAddress))
+				this.devices.Add(clientAddress, new HoloDevice(clientAddress, clientRequest));
+			else
+				this.devices[clientAddress].lastCall = DateTime.Now;
+			RefreshList();
+		}
+		public void RefreshList(){
+			bool flagUpdate = false;
+			// Check if any of devices have to be excluded.
+			List<string> removeList = new List<string>();
+			foreach (KeyValuePair<string, HoloDevice> item in this.devices)
+				if (DateTime.Now - item.Value.lastCall > TimeSpan.FromMilliseconds(this.expireDeivceDelay)) {
+					removeList.Add(item.Key);
+					flagUpdate = true;
 				}
-				bool flagUpdate = false;
-				foreach (KeyValuePair<string, HoloDevice> item in this.devices)
-					if (DateTime.Now - item.Value.lastCall > TimeSpan.FromMilliseconds(this.expireDeivceDelay)) {
-						this.devices.Remove(item.Key);
-						flagUpdate = true;
-					}
-				if (flagUpdate)
-					Grasshopper.Instances.InvalidateCanvas();
+			// Check if solution need to update.
+			if (flagUpdate) {
+				for (int i = 0; i < removeList.Count; i++)
+					this.devices.Remove(removeList[i]);
+				Grasshopper.Instances.InvalidateCanvas();
 			}
 		}
 	}
