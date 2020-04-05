@@ -1,4 +1,7 @@
-﻿using System;
+// #define DEBUG
+#undef DEBUG
+
+using System;
 using System.Collections.Generic;
 
 using System.Windows.Forms;
@@ -13,14 +16,18 @@ namespace HoloFab {
 	// A HoloFab class to send mesh to AR device via TCP.
 	public class MeshStreaming : GH_Component {
 		//////////////////////////////////////////////////////////////////////////
-		private string sourceName = "Mesh Streaming Component";
 		// - history
 		private string lastMessage = string.Empty;
-		// - settings
-		private static Color defaultColor = Color.Red;
+		// - default settings
+		private Color defaultColor = Color.Red;
+		// - component Info
+		// TODO: doesn't seem to be saved
 		public SourceType sourceType;
 		// - debugging
-		public static List<string> debugMessages = new List<string>();
+		#if DEBUG
+		private string sourceName = "Mesh Streaming Component";
+		public List<string> debugMessages = new List<string>();
+		#endif
         
 		/// <summary>
 		/// This is the method that actually does the work.
@@ -30,11 +37,11 @@ namespace HoloFab {
 			//CheckType();
 			// Get inputs.
 			string message;
-			List<Mesh> inputMeshes = new List<Mesh> { };
-			List<Color> inputColor = new List<Color> { };
+			List<Mesh> inputMeshes = new List<Mesh>();
+			List<Color> inputColor = new List<Color>();
 			Connection connect = null;
 			if (!DA.GetDataList(0, inputMeshes)) return;
-			if (!DA.GetDataList(1, inputColor)) return;
+			DA.GetDataList(1, inputColor);
 			if (!DA.GetData(2, ref connect)) return;
 			// Check inputs.
 			if ((inputColor.Count > 1) && (inputColor.Count != inputMeshes.Count)) {
@@ -76,7 +83,9 @@ namespace HoloFab {
 			}
             
 			// Output.
-			// DA.SetData(0, MeshStreaming.debugMessages[MeshStreaming.debugMessages.Count-1]);
+			#if DEBUG
+			DA.SetData(0, this.debugMessages[this.debugMessages.Count-1]);
+			#endif
 		}
 		//////////////////////////////////////////////////////////////////////////
 		/// <summary>
@@ -114,14 +123,16 @@ namespace HoloFab {
 		/// </summary>
 		protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager) {
 			pManager.AddMeshParameter("Mesh", "M", "Mesh object to be encoded and sent via TCP.", GH_ParamAccess.list);
-			pManager.AddColourParameter("Color", "C", "Color for each Mesh object.", GH_ParamAccess.list, MeshStreaming.defaultColor);
+			pManager.AddColourParameter("Color", "C", "Color for each Mesh object.", GH_ParamAccess.list, this.defaultColor);
 			pManager.AddGenericParameter("Connect", "Cn", "Connection object from Holofab 'Create Connection' component.", GH_ParamAccess.item);
 		}
 		/// <summary>
 		/// Registers all the output parameters for this component.
 		/// </summary>
 		protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager) {
-			// pManager.AddTextParameter("Debug", "D", "Debug console.", GH_ParamAccess.item);
+			#if DEBUG
+			pManager.AddTextParameter("Debug", "D", "Debug console.", GH_ParamAccess.item);
+			#endif
 		}
 		////////////////////////////////////////////////////////////////////////
 		// Customize Grasshopper Component Menu.
@@ -146,7 +157,9 @@ namespace HoloFab {
 		}
 		// Common way to Communicate messages.
 		private void UniversalDebug(string message, GH_RuntimeMessageLevel messageType = GH_RuntimeMessageLevel.Remark) {
-			DebugUtilities.UniversalDebug(this.sourceName, message, ref MeshStreaming.debugMessages);
+			#if DEBUG
+			DebugUtilities.UniversalDebug(this.sourceName, message, ref this.debugMessages);
+			#endif
 			this.AddRuntimeMessage(messageType, message);
 		}
 	}

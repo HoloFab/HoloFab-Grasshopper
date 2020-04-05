@@ -1,4 +1,7 @@
-﻿using System;
+// #define DEBUG
+#undef DEBUG
+
+using System;
 using System.Collections.Generic;
 
 using Grasshopper.Kernel;
@@ -10,7 +13,6 @@ namespace HoloFab {
 	// A HoloFab class to receive UI elements from AR device.
 	public class UIReceiver : GH_Component {
 		//////////////////////////////////////////////////////////////////////////
-		private string sourceName = "UI Receiving Component";
 		// - currents
 		private static string currentInput;
 		private static List<bool> currentBools = new List<bool>();
@@ -19,9 +21,13 @@ namespace HoloFab {
 		// - history
 		private static string lastInputs;
 		private static bool flagProcessed = false;
-		public static List<string> debugMessages = new List<string>();
 		// - settings
 		private static int expireDelay = 10;
+		// - debugging
+		#if DEBUG
+		private string sourceName = "UI Receiving Component";
+		public static List<string> debugMessages = new List<string>();
+		#endif
         
 		/// <summary>
 		/// This is the method that actually does the work.
@@ -80,8 +86,10 @@ namespace HoloFab {
 			DA.SetDataList(0, UIReceiver.currentBools);
 			DA.SetDataList(1, UIReceiver.currentInts);
 			DA.SetDataList(2, UIReceiver.currentFloats);
-			//DA.SetData(3, UIReceiver.currentInput);
-
+			#if DEBUG
+			DA.SetData(3, this.debugMessages[this.debugMessages.Count-1]);
+			#endif
+            
 			// Expire Solution.
 			if (connect.status) {
 				GH_Document document = this.OnPingDocument();
@@ -133,12 +141,16 @@ namespace HoloFab {
 			pManager.AddBooleanParameter("Toggles", "T", "Boolean values coming from UI.", GH_ParamAccess.list);
 			pManager.AddIntegerParameter("Counters", "C", "Integer values coming from UI.", GH_ParamAccess.list);
 			pManager.AddNumberParameter("Sliders", "S", "Float values coming from UI.", GH_ParamAccess.list);
-			//pManager.AddTextParameter("Debug", "D", "Debug console.", GH_ParamAccess.item);
+			#if DEBUG
+			pManager.AddTextParameter("Debug", "D", "Debug console.", GH_ParamAccess.item);
+			#endif
 		}
 		////////////////////////////////////////////////////////////////////////
 		// Common way to Communicate messages.
 		private void UniversalDebug(string message, GH_RuntimeMessageLevel messageType = GH_RuntimeMessageLevel.Remark) {
+			#if DEBUG
 			DebugUtilities.UniversalDebug(this.sourceName, message, ref UIReceiver.debugMessages);
+			#endif
 			this.AddRuntimeMessage(messageType, message);
 		}
 	}

@@ -61,8 +61,13 @@ namespace HoloFab {
 				} catch {} finally {
 					server.Close();
 				}
-				if (this.devices.RemoveAll(device =>
-				                           DateTime.Now - device.lastCall > TimeSpan.FromMilliseconds(this.expireDeivceDelay)) > 0)
+				bool flagUpdate = false;
+				foreach (KeyValuePair<string, HoloDevice> item in this.devices)
+					if (DateTime.Now - item.Value.lastCall > TimeSpan.FromMilliseconds(this.expireDeivceDelay)) {
+						this.devices.Remove(item.Key);
+						flagUpdate = true;
+					}
+				if (flagUpdate)
 					Grasshopper.Instances.InvalidateCanvas();
 			}
 		}

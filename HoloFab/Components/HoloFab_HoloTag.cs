@@ -1,4 +1,7 @@
-﻿using System;
+// #define DEBUG
+#undef DEBUG
+
+using System;
 using System.Collections.Generic;
 
 using System.Drawing;
@@ -10,10 +13,16 @@ using HoloFab.CustomData;
 namespace HoloFab {
 	public class HoloTag : GH_Component {
 		//////////////////////////////////////////////////////////////////////////
-		private string sourceName = "HoloTag Component";
 		// - history
-		public static List<string> debugMessages = new List<string>();
-		private static string lastMessage = string.Empty;
+		private string lastMessage = string.Empty;
+		// - default settings
+		public float defaultTextSize = 20.0f;
+		public Color defaultTextColor = Color.White;
+		// - debugging
+		#if DEBUG
+		private string sourceName = "HoloTag Component";
+		public List<string> debugMessages = new List<string>();
+		#endif
         
 		/// <summary>
 		/// This is the method that actually does the work.
@@ -23,13 +32,13 @@ namespace HoloFab {
 			// Get inputs.
 			List<string> inputText = new List<string>();
 			List<Point3d> inputTextLocations = new List<Point3d>();
-			List<Color> inputTextColor = new List<Color> { };
 			List<double> inputTextSize = new List<double>();
+			List<Color> inputTextColor = new List<Color>();
 			Connection connect = null;
 			if (!DA.GetDataList(0, inputText)) return;
 			if (!DA.GetDataList(1, inputTextLocations)) return;
-			if (!DA.GetDataList(2, inputTextSize)) return;
-			if (!DA.GetDataList(3, inputTextColor)) return;
+			DA.GetDataList(2, inputTextSize);
+			DA.GetDataList(3, inputTextColor);
 			if (!DA.GetData(4, ref connect)) return;
 			// Check inputs.
 			if(inputTextLocations.Count != inputText.Count) {
@@ -67,21 +76,23 @@ namespace HoloFab {
                 
 				// Send tag data.
 				byte[] bytes = EncodeUtilities.EncodeData("HOLOTAG", tags, out string currentMessage);
-				if (HoloTag.lastMessage != currentMessage) {
+				if (this.lastMessage != currentMessage) {
 					connect.udpSender.Send(bytes);
 					bool success = connect.udpSender.success;
 					string message = connect.udpSender.debugMessages[connect.udpSender.debugMessages.Count-1];
 					if (success)
-						HoloTag.lastMessage = currentMessage;
+						this.lastMessage = currentMessage;
 					UniversalDebug(message, (success) ? GH_RuntimeMessageLevel.Remark : GH_RuntimeMessageLevel.Error);
 				}
 			} else {
-				HoloTag.lastMessage = string.Empty;
+				this.lastMessage = string.Empty;
 				UniversalDebug("Set 'Send' on true in HoloFab 'HoloConnect'", GH_RuntimeMessageLevel.Warning);
 			}
 			//////////////////////////////////////////////////////
 			// Output.
-			// DA.SetData(0, HoloTag.debugMessages[HoloTag.debugMessages.Count-1]);
+			#if DEBUG
+			DA.SetData(0, this.debugMessages[this.debugMessages.Count-1]);
+			#endif
 		}
 		////////////////////////////////////////////////////////////////////////
 		/// <summary>
@@ -115,20 +126,26 @@ namespace HoloFab {
 		protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager) {
 			pManager.AddTextParameter("Text String", "S", "Tags as string", GH_ParamAccess.list);
 			pManager.AddPointParameter("Text Location", "L", "Sets the location of Tags", GH_ParamAccess.list);
-			pManager.AddNumberParameter("Text Size", "TS", "Size of text Tags in AR environment", GH_ParamAccess.list, 20.0);
-			pManager.AddColourParameter("Text Color", "C", "Color of text Tags", GH_ParamAccess.list, Color.White);
+			pManager.AddNumberParameter("Text Size", "TS", "Size of text Tags in AR environment", GH_ParamAccess.list, this.defaultTextSize);
+			pManager.AddColourParameter("Text Color", "C", "Color of text Tags", GH_ParamAccess.list, this.defaultTextColor);
 			pManager.AddGenericParameter("Connect", "Cn", "Connection object from Holofab 'Create Connection' component.", GH_ParamAccess.item);
+			pManager[2].Optional = true;
+			pManager[3].Optional = true;
 		}
 		/// <summary>
 		/// Registers all the output parameters for this component.
 		/// </summary>
 		protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager) {
-			//pManager.AddTextParameter("Debug", "D", "Debug console.", GH_ParamAccess.item);
+			#if DEBUG
+			pManager.AddTextParameter("Debug", "D", "Debug console.", GH_ParamAccess.item);
+			#endif
 		}
 		////////////////////////////////////////////////////////////////////////
 		// Common way to Communicate messages.
 		private void UniversalDebug(string message, GH_RuntimeMessageLevel messageType = GH_RuntimeMessageLevel.Remark) {
+			#if DEBUG
 			DebugUtilities.UniversalDebug(this.sourceName, message, ref HoloTag.debugMessages);
+			#endif
 			this.AddRuntimeMessage(messageType, message);
 		}
 	}

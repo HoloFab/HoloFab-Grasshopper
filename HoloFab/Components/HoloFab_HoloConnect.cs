@@ -1,4 +1,7 @@
-﻿using System;
+// #define DEBUG
+#undef DEBUG
+
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 
@@ -17,14 +20,17 @@ namespace HoloFab {
 	// A HoloFab class to create Connection object used in other HoloFab components.
 	public class HoloConnect : GH_Component {
 		//////////////////////////////////////////////////////////////////////////
-		private string sourceName = "HoloConnect Component";
-		// - history
-		public static List<string> debugMessages = new List<string>();
+		// - default settings
+		private string defaultIP = "127.0.0.1";
 		// - settings
 		public bool status = false;
 		private Connection connect;
-		private static string defaultIP = "127.0.0.1";
 		public FindServer deviceFinder = new FindServer();
+		// - debugging
+		#if DEBUG
+		private string sourceName = "HoloConnect Component";
+		public static List<string> debugMessages = new List<string>();
+		#endif
         
 		/// <summary>
 		/// This is the method that actually does the work.
@@ -32,7 +38,7 @@ namespace HoloFab {
 		/// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
 		protected override void SolveInstance(IGH_DataAccess DA) {
 			// Get inputs.
-			string remoteIP = HoloConnect.defaultIP;
+			string remoteIP = this.defaultIP;
 			if (!DA.GetData(0, ref remoteIP)) return;
 			//////////////////////////////////////////////////////
 			deviceFinder.StartScanning();
@@ -51,6 +57,9 @@ namespace HoloFab {
 			//////////////////////////////////////////////////////
 			// Output.
 			DA.SetData(0, this.connect);
+			#if DEBUG
+			DA.SetData(1, this.debugMessages[this.debugMessages.Count-1]);
+			#endif
 		}
 		//////////////////////////////////////////////////////////////////////////
 		/// <summary>
@@ -88,18 +97,23 @@ namespace HoloFab {
 		/// Registers all the input parameters for this component.
 		/// </summary>
 		protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager) {
-			pManager.AddTextParameter("Address", "@", "Remote IP address of the AR device.", GH_ParamAccess.item, HoloConnect.defaultIP);
+			pManager.AddTextParameter("Address", "@", "Remote IP address of the AR device.", GH_ParamAccess.item, this.defaultIP);
 		}
 		/// <summary>
 		/// Registers all the output parameters for this component.
 		/// </summary>
 		protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager) {
 			pManager.AddGenericParameter("Connect", "Cn", "Connection object to be used in other HoloFab components.", GH_ParamAccess.list);
+			#if DEBUG
+			pManager.AddTextParameter("Debug", "D", "Debug console.", GH_ParamAccess.item);
+			#endif
 		}
 		////////////////////////////////////////////////////////////////////////
 		// Common way to Communicate messages.
 		private void UniversalDebug(string message, GH_RuntimeMessageLevel messageType = GH_RuntimeMessageLevel.Remark) {
-			DebugUtilities.UniversalDebug(this.sourceName, message, ref HoloConnect.debugMessages);
+			#if DEBUG
+			DebugUtilities.UniversalDebug(this.sourceName, message, ref this.debugMessages);
+			#endif
 			this.AddRuntimeMessage(messageType, message);
 		}
 	}
@@ -154,8 +168,8 @@ namespace HoloFab {
 				// IPAddress ipv4Addresse = Array.FindLast(Dns.GetHostEntry(string.Empty).AddressList,
 				//                                         a => a.AddressFamily == AddressFamily.InterNetwork);
 				string message = "Devices: ";
-				if (FindServer.devices.Count >0)
-					foreach (HoloDevice device in this.deviceFinder.devices.Values)
+				if (this.component.deviceFinder.devices.Count >0)
+					foreach (HoloDevice device in this.component.deviceFinder.devices.Values)
 						message += "\n" + device.ToString();
 				else
 					message += "(not found)";

@@ -1,3 +1,6 @@
+// #define DEBUG
+#undef DEBUG
+
 ﻿using System;
 using System.Collections.Generic;
 
@@ -12,12 +15,15 @@ namespace HoloFab {
 	// A HoloFab class to create Robot object used in other HoloFab components.
 	public class HoloBot : GH_Component {
 		//////////////////////////////////////////////////////////////////////////
-		private string sourceName = "HoloBot Component";
-		// - history
-		public static List<string> debugMessages = new List<string>();
+		// - default settings
+		public Plane defaultPlane = Plane.WorldXY;
 		// - settings
 		private static string[] listRobotNames = new string[] { "Choose Robot", "KR150-2_110", "IRB140", "IRB120" };
-		public static Plane defaultPlane = Plane.WorldXY;
+		// - debugging
+		#if DEBUG
+		private string sourceName = "HoloBot Component";
+		public List<string> debugMessages = new List<string>();
+		#endif
         
 		/// <summary>
 		/// This is the method that actually does the work.
@@ -28,12 +34,12 @@ namespace HoloFab {
 			string inputRobotName = "";
 			Mesh inputEndeffectorMesh = new Mesh();
 			int inputRobotID = 0;
-			Plane inputPlane = HoloBot.defaultPlane;
+			Plane inputPlane = this.defaultPlane;
 			if (!DA.GetData(0, ref inputRobotName))
 				RobotOptionList();
 			DA.GetData(1, ref inputEndeffectorMesh);
-			if (!DA.GetData(2, ref inputRobotID)) return;
-			if (!DA.GetData(3, ref inputPlane)) return;
+			DA.GetData(2, ref inputRobotID);
+			DA.GetData(3, ref inputPlane);
 			//////////////////////////////////////////////////////
 			// Process data.
 			inputEndeffectorMesh.Weld(Math.PI);
@@ -43,6 +49,9 @@ namespace HoloFab {
 			//////////////////////////////////////////////////////
 			// Output.
 			DA.SetData(0, robot);
+			#if DEBUG
+			DA.SetData(1, this.debugMessages[this.debugMessages.Count-1]);
+			#endif
 		}
 		//////////////////////////////////////////////////////////////////////////
 		/// <summary>
@@ -77,7 +86,7 @@ namespace HoloFab {
 			pManager.AddTextParameter("Name", "N", "Name of the robot system.", GH_ParamAccess.item);
 			pManager.AddMeshParameter("EndEffector", "E", "EndEffector as a single mesh", GH_ParamAccess.item);
 			pManager.AddIntegerParameter("ID", "ID", "An integer number as Robot's ID, you can leave it with the default value if there is only one robot in the scene!", GH_ParamAccess.item, 0);
-			pManager.AddPlaneParameter("Plane", "P", "Plane representing Robot's position and orientation", GH_ParamAccess.item, HoloBot.defaultPlane);
+			pManager.AddPlaneParameter("Plane", "P", "Plane representing Robot's position and orientation", GH_ParamAccess.item, this.defaultPlane);
 			//pManager.AddPlaneParameter("TCP", "T", "Robot's Tool Center Point", GH_ParamAccess.item,Plane.WorldXY);
 			//pManager.AddIntegerParameter("Marker ID", "M", "", GH_ParamAccess.list);
 			pManager[0].Optional = true;
@@ -90,6 +99,9 @@ namespace HoloFab {
 		/// </summary>
 		protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager) {
 			pManager.AddGenericParameter("HoloBot", "Hb", "A HoloFab holobographic robot object.", GH_ParamAccess.item);
+			#if DEBUG
+			pManager.AddTextParameter("Debug", "D", "Debug console.", GH_ParamAccess.item);
+			#endif
 		}
 		////////////////////////////////////////////////////////////////////////
 		// Create a drop down to select supported robot if no robot selected.
@@ -115,7 +127,9 @@ namespace HoloFab {
 		////////////////////////////////////////////////////////////////////////
 		// Common way to Communicate messages.
 		private void UniversalDebug(string message, GH_RuntimeMessageLevel messageType = GH_RuntimeMessageLevel.Remark) {
-			DebugUtilities.UniversalDebug(this.sourceName, message, ref HoloBot.debugMessages);
+			#if DEBUG
+			DebugUtilities.UniversalDebug(this.sourceName, message, ref this.debugMessages);
+			#endif
 			this.AddRuntimeMessage(messageType, message);
 		}
 	}
