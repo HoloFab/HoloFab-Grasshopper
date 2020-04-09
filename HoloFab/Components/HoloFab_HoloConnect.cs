@@ -46,7 +46,7 @@ namespace HoloFab {
 			string remoteIP = this.defaultIP;
 			if (!DA.GetData(0, ref remoteIP)) return;
 			//////////////////////////////////////////////////////
-			if (this.connect == null)
+			if ((this.connect == null) || (this.connect.remoteIP != remoteIP))
 				this.connect = new Connection(remoteIP);
             
 			this.connect.status = this.status;
@@ -171,14 +171,16 @@ namespace HoloFab {
 				// Add list of Found Devices.
 				// IPAddress ipv4Addresse = Array.FindLast(Dns.GetHostEntry(string.Empty).AddressList,
 				//                                         a => a.AddressFamily == AddressFamily.InterNetwork);
-				string message = "Devices: ";
-				if (HoloConnect.deviceFinder.devices.Count > 0)
-					foreach (HoloDevice device in HoloConnect.deviceFinder.devices.Values)
-						message += "\n" + device.ToString();
-				else
-					message += "(not found)";
-				graphics.DrawString(message, GH_FontServer.NewFont(FontFamily.GenericMonospace, 6, FontStyle.Regular),
-				                    Brushes.Black, this.BoundsText, GH_TextRenderingConstants.CenterCenter);
+				if (HoloConnect.deviceFinder != null) { 
+                    string message = "Devices: ";
+				    if (HoloConnect.deviceFinder.devices.Count > 0)
+					    foreach (HoloDevice device in HoloConnect.deviceFinder.devices.Values)
+						    message += "\n" + device.ToString();
+				    else
+					    message += "(not found)";
+				    graphics.DrawString(message, GH_FontServer.NewFont(FontFamily.GenericMonospace, 6, FontStyle.Regular),
+				                        Brushes.Black, this.BoundsText, GH_TextRenderingConstants.CenterCenter);
+                }
 			}
 		}
 		public override GH_ObjectResponse RespondToMouseDown(GH_Canvas sender,

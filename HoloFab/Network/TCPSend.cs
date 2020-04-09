@@ -65,7 +65,7 @@ namespace HoloFab {
 				return false;
 			}
 		}
-		// Start a connection and send given byte array.
+		////// Start a connection and send given byte array.
 		public void Send(byte[] sendBuffer) {
 			try {
 				if (!this.client.Connected) {
@@ -86,6 +86,10 @@ namespace HoloFab {
 			} catch (SocketException exception) {
 				// Exception.
 				this.debugMessages.Add("TCPSend: SocketException: " + exception.ToString());
+				success = false;
+			} catch (Exception exception) {
+				// Exception.
+				this.debugMessages.Add("TCPSend: Exception: " + exception.ToString());
 				success = false;
 			}
 			success = false;
