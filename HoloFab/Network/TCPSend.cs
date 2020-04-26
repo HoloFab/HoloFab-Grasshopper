@@ -1,7 +1,13 @@
-﻿using System;
+﻿#define DEBUG
+#define DEBUGWARNING
+// #undef DEBUG
+// #undef DEBUGWARNING
+
+using System;
 using System.Collections.Generic;
 
 using System.Net.Sockets;
+using System.Threading;
 
 using HoloFab;
 
@@ -12,13 +18,14 @@ namespace HoloFab {
 		private string remoteIP;
 		private int remotePort;
         
-		public bool success = false;
+		public bool flagSuccess = false;
         
 		private TcpClient client;
 		private NetworkStream stream;
 		public List<string> debugMessages = new List<string>();
 		public bool connected;
-        
+		private string sourceName = "TCP Send Interface";
+
 		// Main Constructor
 		public TCPSend(string _remoteIP, int _remotePort=11111) {
 			this.remoteIP = _remoteIP;
@@ -46,53 +53,72 @@ namespace HoloFab {
 				}
 				this.stream = this.client.GetStream();
 				this.connected = true;
+				StartSending();
 				// Acknowledge.
-				this.debugMessages.Add("TCPSend: Connection Stablished!");
+				#if DEBUG
+				DebugUtilities.UniversalDebug(this.sourceName, "Connection Stablished!", ref this.debugMessages);
+				#endif
 				return true;
 			} catch (ArgumentNullException exception) {
 				// Exception.
-				this.debugMessages.Add("TCPSend: ArgumentNullException: " + exception.ToString());
+				#if DEBUG
+				DebugUtilities.UniversalDebug(this.sourceName, "ArgumentNullException: " + exception.ToString(), ref this.debugMessages);
+				#endif
 				this.connected = false;
 				return false;
 			} catch (SocketException exception) {
 				// Exception.
-				this.debugMessages.Add("TCPSend: SocketException: " + exception.ToString());
+				#if DEBUG
+				DebugUtilities.UniversalDebug(this.sourceName, "SocketException: " + exception.ToString(), ref this.debugMessages);
+				#endif
 				this.connected = false;
 				return false;
 			} catch (Exception exception) {
-				this.debugMessages.Add("TCPSend: UnhandledException: " + exception.ToString());
+				#if DEBUG
+				DebugUtilities.UniversalDebug(this.sourceName, "UnhandledException: " + exception.ToString(), ref this.debugMessages);
+				#endif
 				this.connected = false;
 				return false;
 			}
 		}
 		////// Start a connection and send given byte array.
-		public void Send(byte[] sendBuffer) {
+		private void Send(byte[] sendBuffer) {
 			try {
 				if (!this.client.Connected) {
-					this.debugMessages.Add("TCPSend: Client Disconnected!");
-					success = false;
+					#if DEBUG
+					DebugUtilities.UniversalDebug(this.sourceName, "Client Disconnected!", ref this.debugMessages);
+					#endif
+					this.flagSuccess = false;
 				}
                 
 				// Write.
 				this.stream.Write(sendBuffer, 0, sendBuffer.Length);
 				// Acknowledge.
-				this.debugMessages.Add("TCPSend: Data Sent!");
-				success = true;
+				#if DEBUG
+				DebugUtilities.UniversalDebug(this.sourceName, "Data Sent!", ref this.debugMessages);
+				#endif
+				this.flagSuccess = true;
 				return;
 			} catch (ArgumentNullException exception) {
 				// Exception.
-				this.debugMessages.Add("TCPSend: ArgumentNullException: " + exception.ToString());
-				success = false;
+				#if DEBUG
+				DebugUtilities.UniversalDebug(this.sourceName, "ArgumentNullException: " + exception.ToString(), ref this.debugMessages);
+				#endif
+				this.flagSuccess = false;
 			} catch (SocketException exception) {
 				// Exception.
-				this.debugMessages.Add("TCPSend: SocketException: " + exception.ToString());
-				success = false;
+				#if DEBUG
+				DebugUtilities.UniversalDebug(this.sourceName, "SocketException: " + exception.ToString(), ref this.debugMessages);
+				#endif
+				this.flagSuccess = false;
 			} catch (Exception exception) {
 				// Exception.
-				this.debugMessages.Add("TCPSend: Exception: " + exception.ToString());
-				success = false;
+				#if DEBUG
+				DebugUtilities.UniversalDebug(this.sourceName, "Exception: " + exception.ToString(), ref this.debugMessages);
+				#endif
+				this.flagSuccess = false;
 			}
-			success = false;
+			this.flagSuccess = false;
 		}
 		// Stop Connection.
 		public void Disconnect() {
@@ -104,6 +130,72 @@ namespace HoloFab {
 			if (this.stream != null) {
 				this.stream.Close();
 				this.stream = null; // Good Practice?
+			}
+			StopSending();
+			#if DEBUG
+			DebugUtilities.UniversalDebug(this.sourceName, "Disconnected.", ref this.debugMessages);
+			#endif
+		}
+		////////////////////////////////////////////////////////////////////////////////////////////
+		// Queue behavior.
+		private Thread sendThread;
+		// Queue of buffers to send.
+		private Queue<byte[]> sendQueue = new Queue<byte[]>();
+		// Accessor to check if there is data in queue
+		public bool IsNotEmpty {
+			get {
+				return this.sendQueue.Count > 0;
+			}
+		}
+		// Enqueue data.
+		public void QueueUpData(byte[] newData) {
+			lock (this.sendQueue) {
+				this.sendQueue.Enqueue(newData);
+			}
+		}
+		// Infinite Loop to continuously check the loop and try send it.
+		public void SendLoop() {
+			while (true) {
+				try {
+					if (this.IsNotEmpty) {
+						lock (this.sendQueue) {
+							// Peek message to send
+							Send(this.sendQueue.Dequeue());
+							//// If no exception caught and data sent successfully - remove from queue.
+							//if (this.flagSuccess)
+							//	this.sendQueue.Dequeue();
+						}
+					}
+				} catch (Exception exception) { 
+					#if DEBUG
+					DebugUtilities.UniversalDebug(this.sourceName, "Queue Exception: " + exception.ToString(), ref this.debugMessages);
+					#endif
+					this.flagSuccess = false;
+				}
+			}
+		}
+		private void StartSending(){
+			// if queue not set create it.
+			if (this.sendQueue == null)
+				this.sendQueue = new Queue<byte[]>();
+			// Start the thread.
+			this.sendThread = new Thread(new ThreadStart(SendLoop));
+			this.sendThread.IsBackground = true;
+			this.sendThread.Start();
+			#if DEBUG
+			DebugUtilities.UniversalDebug(this.sourceName, "Queue Started.", ref this.debugMessages);
+			#endif
+		}
+		// Disable connection.
+		public void StopSending() {
+			// TODO: Should we reset queue?
+			// Reset.
+			if (this.sendThread != null) {
+				this.sendThread.Abort();
+				this.sendThread = null; // Good Practice?
+				#if DEBUG
+				DebugUtilities.UniversalDebug(this.sourceName, "Stopping Thread.", ref this.debugMessages);
+				#endif
 			}
 		}
 	}

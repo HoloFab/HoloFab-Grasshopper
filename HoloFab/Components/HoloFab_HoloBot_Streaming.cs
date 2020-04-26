@@ -16,6 +16,11 @@ namespace HoloFab {
 		//////////////////////////////////////////////////////////////////////////
 		// - history
 		private string lastMessage = string.Empty;
+		// - settings
+		// If messages in queues - expire solution after this time.
+		private static int expireDelay = 10;
+		// force messages despite memory or no
+		private bool flagForce = false;
 		// - debugging
 		#if DEBUG
 		private string sourceName = "Robot Streaming Component";
@@ -31,7 +36,7 @@ namespace HoloFab {
 			List<RobotData> inputRobots = new List<RobotData>();
 			Connection connect = null;
 			if (!DA.GetDataList(0, inputRobots)) return;
-			if (!DA.GetData(1, ref connect)) return;
+			if (!DA.GetData<Connection>(1, ref connect)) return;
 			//////////////////////////////////////////////////////
 			// Process data.
 			if (connect.status) {
@@ -39,13 +44,13 @@ namespace HoloFab {
                 
 				// Send robot data.
 				byte[] bytes = EncodeUtilities.EncodeData("HOLOBOTS", inputRobots.ToArray(), out string currentMessage);
-				if (this.lastMessage != currentMessage) {
-					connect.tcpSender.Send(bytes);
-					bool success = connect.tcpSender.success;
-					string message = connect.tcpSender.debugMessages[connect.tcpSender.debugMessages.Count-1];
-					if (success)
-						this.lastMessage = currentMessage;
-					UniversalDebug(message, (success) ? GH_RuntimeMessageLevel.Remark : GH_RuntimeMessageLevel.Error);
+				if (this.flagForce || (this.lastMessage != currentMessage)) {
+					connect.tcpSender.QueueUpData(bytes);
+					//bool success = connect.tcpSender.flagSuccess;
+					//string message = connect.tcpSender.debugMessages[connect.tcpSender.debugMessages.Count-1];
+					//if (success)
+					//	this.lastMessage = currentMessage;
+					//UniversalDebug(message, (success) ? GH_RuntimeMessageLevel.Remark : GH_RuntimeMessageLevel.Error);
 				}
 			} else {
 				this.lastMessage = string.Empty;
@@ -56,6 +61,16 @@ namespace HoloFab {
 			#if DEBUG
 			DA.SetData(0, RobotStreaming.debugMessages[RobotStreaming.debugMessages.Count-1]);
 			#endif
+			
+			// Expire Solution.
+			if ((connect.status) && (connect.PendingMessages)) {
+				GH_Document document = this.OnPingDocument();
+				if (document != null)
+					document.ScheduleSolution(RobotStreaming.expireDelay, ScheduleCallback);
+			}
+		}
+		private void ScheduleCallback(GH_Document document) {
+			ExpireSolution(false);
 		}
 		//////////////////////////////////////////////////////////////////////////
 		/// <summary>

@@ -18,6 +18,11 @@ namespace HoloFab {
 		// - default settings
 		public float defaultTextSize = 20.0f;
 		public Color defaultTextColor = Color.White;
+		// - settings
+		// If messages in queues - expire solution after this time.
+		private static int expireDelay = 10;
+		// force messages despite memory or no
+		private bool flagForce = false;
 		// - debugging
 		#if DEBUG
 		private string sourceName = "HoloTag Component";
@@ -39,9 +44,9 @@ namespace HoloFab {
 			if (!DA.GetDataList(1, inputTextLocations)) return;
 			DA.GetDataList(2, inputTextSize);
 			DA.GetDataList(3, inputTextColor);
-			if (!DA.GetData(4, ref connect)) return;
+			if (!DA.GetData<Connection>(4, ref connect)) return;
 			// Check inputs.
-			if(inputTextLocations.Count != inputText.Count) {
+			if (inputTextLocations.Count != inputText.Count) {
 				UniversalDebug("The number of 'tag locations' and 'tag texts' should be equal.",
 				               GH_RuntimeMessageLevel.Error);
 				return;
@@ -76,13 +81,13 @@ namespace HoloFab {
                 
 				// Send tag data.
 				byte[] bytes = EncodeUtilities.EncodeData("HOLOTAG", tags, out string currentMessage);
-				if (this.lastMessage != currentMessage) {
-					connect.udpSender.Send(bytes);
-					bool success = connect.udpSender.success;
-					string message = connect.udpSender.debugMessages[connect.udpSender.debugMessages.Count-1];
-					if (success)
-						this.lastMessage = currentMessage;
-					UniversalDebug(message, (success) ? GH_RuntimeMessageLevel.Remark : GH_RuntimeMessageLevel.Error);
+				if (this.flagForce || (this.lastMessage != currentMessage)) {
+					connect.udpSender.QueueUpData(bytes);
+					//bool success = connect.udpSender.flagSuccess;
+					//string message = connect.udpSender.debugMessages[connect.udpSender.debugMessages.Count-1];
+					//if (success)
+					//	this.lastMessage = currentMessage;
+					//UniversalDebug(message, (success) ? GH_RuntimeMessageLevel.Remark : GH_RuntimeMessageLevel.Error);
 				}
 			} else {
 				this.lastMessage = string.Empty;
@@ -93,6 +98,16 @@ namespace HoloFab {
 			#if DEBUG
 			DA.SetData(0, this.debugMessages[this.debugMessages.Count-1]);
 			#endif
+			
+			// Expire Solution.
+			if ((connect.status) && (connect.PendingMessages)) {
+				GH_Document document = this.OnPingDocument();
+				if (document != null)
+					document.ScheduleSolution(HoloTag.expireDelay, ScheduleCallback);
+			}
+		}
+		private void ScheduleCallback(GH_Document document) {
+			ExpireSolution(false);
 		}
 		////////////////////////////////////////////////////////////////////////
 		/// <summary>

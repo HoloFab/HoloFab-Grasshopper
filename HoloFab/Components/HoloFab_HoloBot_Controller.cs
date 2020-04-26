@@ -17,6 +17,9 @@ namespace HoloFab {
 		//////////////////////////////////////////////////////////////////////////
 		// - history
 		private string lastMessage = string.Empty;
+		// - settings
+		// force messages despite memory or no
+		private bool flagForce = false;
 		// - debugging
 		#if DEBUG
 		private string sourceName = "Robot Controller Component";
@@ -32,9 +35,9 @@ namespace HoloFab {
 			List<RobotData> inputRobots = new List<RobotData>();
 			GH_Structure<GH_Number> inputAxisAngles = new GH_Structure<GH_Number> { };
 			Connection connect = null;
-			if (!DA.GetDataList(0, inputRobots)) return;
+			if (!DA.GetDataList<RobotData>(0, inputRobots)) return;
 			if (!DA.GetDataTree(1, out inputAxisAngles)) return;
-			if (!DA.GetData(2, ref connect)) return;
+			if (!DA.GetData<Connection>(2, ref connect)) return;
 			// Check inputs.
 			if ((inputAxisAngles.Paths.Count > 1) && (inputAxisAngles.Paths.Count != inputRobots.Count)) {
 				UniversalDebug("The number of Branches of Axis Angles should be one or equal to the number of HoloBot objects.",
@@ -65,13 +68,13 @@ namespace HoloFab {
                 
 				// Send robot controller data.
 				byte[] bytes = EncodeUtilities.EncodeData("CONTROLLER", robotControllers, out string currentMessage);
-				if (this.lastMessage != currentMessage) {
-					connect.udpSender.Send(bytes);
-					bool success = connect.udpSender.success;
-					string message = connect.udpSender.debugMessages[connect.udpSender.debugMessages.Count-1];
-					if (success)
-						this.lastMessage = currentMessage;
-					UniversalDebug(message, (success) ? GH_RuntimeMessageLevel.Remark : GH_RuntimeMessageLevel.Error);
+				if (this.flagForce || (this.lastMessage != currentMessage)) {
+					connect.udpSender.QueueUpData(bytes);
+					//bool success = connect.udpSender.success;
+					//string message = connect.udpSender.debugMessages[connect.udpSender.debugMessages.Count-1];
+					//if (success)
+					//	this.lastMessage = currentMessage;
+					//UniversalDebug(message, (success) ? GH_RuntimeMessageLevel.Remark : GH_RuntimeMessageLevel.Error);
                     
 				}
 			} else {

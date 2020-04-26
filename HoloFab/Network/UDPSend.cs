@@ -13,6 +13,7 @@ using Windows.Storage.Streams;
 #else
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 #endif
 
 namespace HoloFab {
@@ -22,7 +23,7 @@ namespace HoloFab {
 		private string remoteIP;
 		private int remotePort;
         
-		public bool success = false;
+		public bool flagSuccess = false;
         
 		// Network Objects:
 		#if WINDOWS_UWP
@@ -45,11 +46,21 @@ namespace HoloFab {
 			this.remotePort = _remotePort;
 			this.debugMessages = new List<string>();
 		}
+		~UDPSend() {
+			Disconnect();
+		}
+
+		public void Connect() {
+			StartSending();
+		}
+		public void Disconnect() {
+			StopSending();
+		}
         
 		#if WINDOWS_UWP
 		// Start a connection and send given byte array.
 		public async void Send(byte[] sendBuffer) {
-			this.success = false;
+			this.flagSuccess = false;
 			// Stop client if set previously.
 			if (this.client != null) {
 				this.client.Dispose();
@@ -73,7 +84,7 @@ namespace HoloFab {
 				#if DEBUG
 				DebugUtilities.UniversalDebug(this.sourceName, "Data Sent!", ref this.debugMessages);
 				#endif
-				this.success = true;
+				this.flagSuccess = true;
 				return;
 			} catch (Exception exception) {
 				// Exception.
@@ -106,7 +117,7 @@ namespace HoloFab {
 				#if DEBUG
 				DebugUtilities.UniversalDebug(this.sourceName, "Broadcast Sent!", ref this.debugMessages);
 				#endif
-				this.success = true;
+				this.flagSuccess = true;
 				return;
 			} catch (Exception exception) {
 				// Exception.
@@ -117,8 +128,8 @@ namespace HoloFab {
 		}
 		#else
 		// Start a connection and send given byte array.
-		public void Send(byte[] sendBuffer) {
-			this.success = false;
+		private void Send(byte[] sendBuffer) {
+			this.flagSuccess = false;
 			// Reset.
 			if (this.client != null) {
 				this.client.Close();
@@ -135,7 +146,7 @@ namespace HoloFab {
 				#if DEBUG
 				DebugUtilities.UniversalDebug(this.sourceName, "Data Sent!", ref this.debugMessages);
 				#endif
-				this.success = true;
+				this.flagSuccess = true;
 				return;
 			} catch (Exception exception) {
 				// Exception.
@@ -162,12 +173,74 @@ namespace HoloFab {
 				#if DEBUG
 				DebugUtilities.UniversalDebug(this.sourceName, "Broadcast Sent!", ref this.debugMessages);
 				#endif
-				this.success = true;
+				this.flagSuccess = true;
 				return;
 			} catch (Exception exception) {
 				// Exception.
 				#if DEBUGWARNING
 				DebugUtilities.UniversalWarning(this.sourceName, "Exception: " + exception.ToString(), ref this.debugMessages);
+				#endif
+			}
+		}
+		////////////////////////////////////////////////////////////////////////////////////////////
+		// Queue behavior.
+		private Thread sendThread;
+		// Queue of buffers to send.
+		private Queue<byte[]> sendQueue = new Queue<byte[]>();
+		// Accessor to check if there is data in queue
+		public bool IsNotEmpty {
+			get {
+				return this.sendQueue.Count > 0;
+			}
+		}
+		// Enqueue data.
+		public void QueueUpData(byte[] newData) {
+			lock (this.sendQueue) { 
+				this.sendQueue.Enqueue(newData);
+			}
+		}
+		// Infinite Loop to continuously check the loop and try send it.
+		public void SendLoop() {
+			while (true) {
+				try {
+					if (this.IsNotEmpty) {
+						lock (this.sendQueue) {
+							// Peek message to send
+							Send(this.sendQueue.Dequeue());
+							//// If no exception caught and data sent successfully - remove from queue.
+							//if (this.flagSuccess)
+							//	this.sendQueue.Dequeue();
+						}
+					}
+				} catch (Exception exception) { 
+					#if DEBUG
+					DebugUtilities.UniversalDebug(this.sourceName, "Queue Exception: " + exception.ToString(), ref this.debugMessages);
+					#endif
+					this.flagSuccess = false;
+				}
+			}
+		}
+		private void StartSending(){
+			// if queue not set create it.
+			if (this.sendQueue == null)
+				this.sendQueue = new Queue<byte[]>();
+			// Start the thread.
+			this.sendThread = new Thread(new ThreadStart(SendLoop));
+			this.sendThread.IsBackground = true;
+			this.sendThread.Start();
+			#if DEBUG
+			DebugUtilities.UniversalDebug(this.sourceName, "Queue Started.", ref this.debugMessages);
+			#endif
+		}
+		// Disable connection.
+		public void StopSending() {
+			// TODO: Should we reset queue?
+			// Reset.
+			if (this.sendThread != null) {
+				this.sendThread.Abort();
+				this.sendThread = null; // Good Practice?
+				#if DEBUG
+				DebugUtilities.UniversalDebug(this.sourceName, "Stopping Thread.", ref this.debugMessages);
 				#endif
 			}
 		}

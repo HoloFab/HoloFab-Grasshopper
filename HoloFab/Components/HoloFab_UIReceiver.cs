@@ -45,8 +45,8 @@ namespace HoloFab {
 					UIReceiver.flagProcessed = true;
 					// Send local IPAddress for device to communicate back.
 					byte[] bytes = EncodeUtilities.EncodeData("IPADDRESS", NetworkUtilities.LocalIPAddress(), out string currentMessage);
-					connect.udpSender.Send(bytes);
-					bool success = connect.udpSender.success;
+					connect.udpSender.QueueUpData(bytes);
+					//bool success = connect.udpSender.flagSuccess;
 					UniversalDebug("Sent local IP.");
 				}
                 

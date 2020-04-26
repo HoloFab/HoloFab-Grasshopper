@@ -30,11 +30,19 @@ namespace HoloFab {
 			// }
 			public bool Connect(){
 				this.udpReceiver.Connect();
+				this.udpSender.Connect();
 				return this.tcpSender.Connect();
 			}
 			public void Disconnect(){
 				this.udpReceiver.Disconnect();
+				this.udpSender.Disconnect();
 				this.tcpSender.Disconnect();
+			}
+
+			public bool PendingMessages {
+				get {
+					return (this.tcpSender.IsNotEmpty || this.udpSender.IsNotEmpty);
+				}
 			}
 		}
 	}

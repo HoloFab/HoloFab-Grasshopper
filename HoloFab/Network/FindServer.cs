@@ -32,6 +32,10 @@ namespace HoloFab {
 				FindServer.receiver.OnReceive = UpdateDevices;
 			} catch {}
 		}
+		~FindServer() { 
+			if (FindServer.receiver != null)
+				FindServer.receiver.Disconnect();
+		}
         
 		// A Function to start searching for devices
 		public void StartScanning() {

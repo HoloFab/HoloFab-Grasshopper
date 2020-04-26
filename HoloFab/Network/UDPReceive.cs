@@ -26,7 +26,7 @@ namespace HoloFab {
 		// Local Port
 		private int localPort = 8055;
 		// Force the messages depite history.
-		public bool flagForce = true;
+		public bool flagForce = false;
         
 		// Network Objects:
 		#if WINDOWS_UWP
