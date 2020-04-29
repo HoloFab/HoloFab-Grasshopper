@@ -1,6 +1,6 @@
 
-/.vs/*
+.vs/*
 
-/HoloFab/obj/*
+HoloFab/obj/*
 
 !.gitignore
