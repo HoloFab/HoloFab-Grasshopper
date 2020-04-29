@@ -9,6 +9,7 @@ using System.Drawing;
 using Rhino.Geometry;
 using Grasshopper.Kernel;
 using Newtonsoft.Json;
+using System;
 
 using HoloFab.CustomData;
 
@@ -22,12 +23,12 @@ namespace HoloFab {
 		private Color defaultColor = Color.Red;
 		// - component Info
 		// TODO: doesn't seem to be saved
-		public SourceType sourceType;
+		private SourceType sourceType;
 		// - settings
 		// If messages in queues - expire solution after this time.
-		private static int expireDelay = 10;
+		private static int expireDelay = 40;
 		// force messages despite memory or no
-		private bool flagForce = false;
+		private bool flagForce = true;
 		// - debugging
 		#if DEBUG
 		private string sourceName = "Mesh Streaming Component";
@@ -176,6 +177,26 @@ namespace HoloFab {
 			DebugUtilities.UniversalDebug(this.sourceName, message, ref this.debugMessages);
 			#endif
 			this.AddRuntimeMessage(messageType, message);
+		}
+		////////////////////////////////////////////////////////////////////////
+		// Try to solve the saving of source Type.
+		public override bool Write(GH_IO.Serialization.GH_IWriter writer) {
+			// First add our own field.
+			writer.SetInt32("sourceType", (int)this.sourceType);
+			// Then call the base class implementation.
+			return base.Write(writer);
+		}
+		public override bool Read(GH_IO.Serialization.GH_IReader reader) {
+			// First read our own field.
+			try {
+				this.sourceType = (SourceType)reader.GetInt32("sourceType");
+			}
+			catch {
+				this.sourceType = SourceType.UDP;
+			}
+			UpdateMessage();
+			// Then call the base class implementation.
+			return base.Read(reader);
 		}
 	}
 }

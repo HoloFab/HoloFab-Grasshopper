@@ -19,7 +19,7 @@ namespace HoloFab {
 		private string lastMessage = string.Empty;
 		// - settings
 		// force messages despite memory or no
-		private bool flagForce = false;
+		private bool flagForce = true;
 		// - debugging
 		#if DEBUG
 		private string sourceName = "Robot Controller Component";

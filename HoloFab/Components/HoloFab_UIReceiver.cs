@@ -22,7 +22,7 @@ namespace HoloFab {
 		private static string lastInputs;
 		private static bool flagProcessed = false;
 		// - settings
-		private static int expireDelay = 10;
+		private static int expireDelay = 40;
 		// - debugging
 		#if DEBUG
 		private string sourceName = "UI Receiving Component";

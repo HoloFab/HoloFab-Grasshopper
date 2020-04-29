@@ -20,7 +20,7 @@ namespace HoloFab {
 		public Color defaultTextColor = Color.White;
 		// - settings
 		// If messages in queues - expire solution after this time.
-		private static int expireDelay = 10;
+		private static int expireDelay = 40;
 		// force messages despite memory or no
 		private bool flagForce = false;
 		// - debugging

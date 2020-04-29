@@ -24,7 +24,7 @@ namespace HoloFab {
 		private string defaultIP = "127.0.0.1";
 		// - settings
 		// If messages in queues - expire solution after this time.
-		private static int expireDelay = 10;
+		//private static int expireDelay = 40;
 		public bool status = false;
 		private Connection connect;
 		public static FindServer deviceFinder;
