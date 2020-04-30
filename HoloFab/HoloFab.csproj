@@ -66,6 +66,7 @@
   <ItemGroup>
     <Compile Include="Network\FindServer.cs" />
     <Compile Include="Network\TCPSend.cs" />
+    <Compile Include="Network\TCPReceive.cs" />
     <Compile Include="Network\UDPSend.cs" />
     <Compile Include="Network\UDPReceive.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
