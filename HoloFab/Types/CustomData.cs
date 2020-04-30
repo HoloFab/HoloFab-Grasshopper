@@ -53,5 +53,20 @@ namespace HoloFab {
 				if (_floats.Count > 0) this.floats = _floats;
 			}
 		}
+		// Cutom PointCloud encoding.
+		[Serializable]
+		public class PointCloudData {
+			public List<float[]> positions;
+			public List<int[]> pointColors;
+            
+			public PointCloudData() {
+				this.positions = new List<float[]>();
+				this.pointColors = new List<int[]>();
+			}
+			public PointCloudData(List<float[]> _positions, List<int[]> _pointColors) : this() {
+				if (_positions.Count > 0) this.positions = _positions;
+				if (_pointColors.Count > 0) this.pointColors = _pointColors;
+			}
+		}
 	}
 }
