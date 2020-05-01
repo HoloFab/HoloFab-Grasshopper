@@ -164,49 +164,48 @@ namespace HoloFab {
 			this.client = new UdpClient(this.localPort);
 			IPEndPoint anyIP = new IPEndPoint(IPAddress.Any, 0);
 			// Infinite loop.
-			try {
-				byte[] data;
-				string receiveString;
-				while (true) {
-					// Receive Bytes.
-					data = client.Receive(ref anyIP);
-					if (data.Length > 0) {
-						// If buffer not empty - decode it.
-						receiveString = EncodeUtilities.DecodeData(data);
-						// If string not empty and not read yet - react to it.
-						if (!string.IsNullOrEmpty(receiveString)) {
-							#if DEBUG2
-							DebugUtilities.UniversalDebug(this.sourceName, "Total Data found: " + receiveString, ref this.debugMessages);
-							#endif
-							if ((this.dataMessages.Count == 0) ||
+			byte[] data;
+			string receiveString;
+	        while (true) {
+                try {
+				    // Receive Bytes.
+				    data = client.Receive(ref anyIP);
+				    if (data.Length > 0) {
+					    // If buffer not empty - decode it.
+					    receiveString = EncodeUtilities.DecodeData(data);
+					    // If string not empty and not read yet - react to it.
+					    if (!string.IsNullOrEmpty(receiveString)) {
+						    #if DEBUG2
+						    DebugUtilities.UniversalDebug(this.sourceName, "Total Data found: " + receiveString, ref this.debugMessages);
+						    #endif
+						    if ((this.dataMessages.Count == 0) ||
 							    (this.flagForce || (this.dataMessages[this.dataMessages.Count-1] != receiveString))) {
-								this.dataMessages.Add(receiveString);
-								this.connectionHistory.Add(anyIP.Address.ToString());
-								this.flagDataRead = false;
-								if (OnReceive != null)
-									OnReceive();
-							} else {
-								#if DEBUG2
-								DebugUtilities.UniversalDebug(this.sourceName, "Message already added.", ref this.debugMessages);
-								#endif
-							}
-						}
+							    this.dataMessages.Add(receiveString);
+							    this.connectionHistory.Add(anyIP.Address.ToString());
+							    this.flagDataRead = false;
+							    if (OnReceive != null)
+								    OnReceive();
+						    } else {
+							    #if DEBUG2
+							    DebugUtilities.UniversalDebug(this.sourceName, "Message already added.", ref this.debugMessages);
+							    #endif
+						    }
+					    }
 					}
-				}
-			} catch (SocketException exception) {
-				// SocketException.
-				#if DEBUGWARNING
-				DebugUtilities.UniversalWarning(this.sourceName, "SocketException: " + exception.ToString(), ref this.debugMessages);
-				#endif
-			} catch (Exception exception) {
-				// Exception.
-				#if DEBUGWARNING
-				DebugUtilities.UniversalWarning(this.sourceName, "Exception: " + exception.ToString(), ref this.debugMessages);
-				#endif
-			} finally {
-				this.Disconnect();
-			}
-		}
+                } catch (SocketException exception) {
+				    // SocketException.
+				    #if DEBUGWARNING
+				    DebugUtilities.UniversalWarning(this.sourceName, "SocketException: " + exception.ToString(), ref this.debugMessages);
+				    #endif
+			    } catch (Exception exception) {
+				    // Exception.
+				    #if DEBUGWARNING
+				    DebugUtilities.UniversalWarning(this.sourceName, "Exception: " + exception.ToString(), ref this.debugMessages);
+				    #endif
+			    }
+            }
+            //this.Disconnect();
+        }
 		#endif
 	}
 }

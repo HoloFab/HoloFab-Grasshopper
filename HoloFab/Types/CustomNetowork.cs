@@ -30,8 +30,8 @@ namespace HoloFab {
 			// }
 			public bool Connect(){
 				this.udpReceiver.Connect();
-				this.udpSender.Connect();
-				return this.tcpSender.Connect();
+				this.udpSender.Connect();                
+                return this.tcpSender.Connect();
 			}
 			public void Disconnect(){
 				this.udpReceiver.Disconnect();
