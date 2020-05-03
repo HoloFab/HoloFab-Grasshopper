@@ -81,6 +81,7 @@
     <Compile Include="Types\CustomNetowork.cs" />
     <Compile Include="Types\CustomRobot.cs" />
     <Compile Include="Types\CustomClient.cs" />
+    <Compile Include="Types\ThreadInterface.cs" />
     <Compile Include="Utilities\EncodeUtilities.cs" />
     <Compile Include="Utilities\DebugUtilities.cs" />
     <Compile Include="Utilities\MeshUtilities.cs" />

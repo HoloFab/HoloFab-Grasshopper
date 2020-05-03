@@ -18,6 +18,8 @@ namespace HoloFab {
 		// - history
 		private string lastMessage = string.Empty;
 		// - settings
+		// If messages in queues - expire solution after this time.
+		private static int expireDelay = 40;
 		// force messages despite memory or no
 		private bool flagForce = true;
 		// - debugging
@@ -86,6 +88,16 @@ namespace HoloFab {
 			#if DEBUG
 			DA.SetData(0, this.debugMessages[this.debugMessages.Count-1]);
 			#endif
+			
+			// Expire Solution.
+			if ((connect.status) && (connect.PendingMessages)) {
+				GH_Document document = this.OnPingDocument();
+				if (document != null)
+					document.ScheduleSolution(Controller.expireDelay, ScheduleCallback);
+			}
+		}
+		private void ScheduleCallback(GH_Document document) {
+			ExpireSolution(false);
 		}
 		//////////////////////////////////////////////////////////////////////////
 		/// <summary>

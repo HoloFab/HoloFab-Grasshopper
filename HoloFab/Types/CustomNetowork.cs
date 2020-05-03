@@ -29,20 +29,29 @@ namespace HoloFab {
 			// 	this.tcpSender = _tcpSender;
 			// }
 			public bool Connect(){
+				if (!this.tcpSender.Connect())
+					return false;
 				this.udpReceiver.Connect();
-				this.udpSender.Connect();                
-                return this.tcpSender.Connect();
+				this.udpSender.Connect();
+				return true;
 			}
 			public void Disconnect(){
+				this.tcpSender.Disconnect();
 				this.udpReceiver.Disconnect();
 				this.udpSender.Disconnect();
-				this.tcpSender.Disconnect();
 			}
 
 			public bool PendingMessages {
 				get {
 					return (this.tcpSender.IsNotEmpty || this.udpSender.IsNotEmpty);
 				}
+			}
+
+			public void TransmitIP() { 
+				// Send local IPAddress for device to communicate back.
+				byte[] bytes = EncodeUtilities.EncodeData("IPADDRESS", NetworkUtilities.LocalIPAddress(), out string currentMessage);
+				this.udpSender.QueueUpData(bytes);
+				//bool success = connect.udpSender.flagSuccess;
 			}
 		}
 	}

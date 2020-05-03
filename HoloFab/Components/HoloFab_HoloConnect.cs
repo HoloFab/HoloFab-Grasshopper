@@ -43,18 +43,24 @@ namespace HoloFab {
 				HoloConnect.deviceFinder = new FindServer();
 				HoloConnect.deviceFinder.StartScanning();
 			}
-			HoloConnect.deviceFinder.RefreshList();
 			// Get inputs.
 			string remoteIP = this.defaultIP;
 			if (!DA.GetData(0, ref remoteIP)) return;
 			//////////////////////////////////////////////////////
-			if ((this.connect == null) || (this.connect.remoteIP != remoteIP))
+			if (this.connect == null) // New Connection.
 				this.connect = new Connection(remoteIP);
-            
+			else if (this.connect.remoteIP != remoteIP) {
+				// If IP Changed first Disconnect the old one.
+				this.connect.Disconnect();
+				this.connect = new Connection(remoteIP);
+			}
+
 			this.connect.status = this.status;
 			if (this.status) {
 				// Start connections
 				bool success = this.connect.Connect();
+				if (success)
+					this.connect.TransmitIP();
 				string message = (success) ? "Connection established." : "Connection failed, please check your network connection and try again.";
 				UniversalDebug(message, (success) ? GH_RuntimeMessageLevel.Remark : GH_RuntimeMessageLevel.Error);
 			} else {

@@ -49,8 +49,6 @@ namespace HoloFab {
 		private int localPort;
 		// Size of buffer to try to read at once.
 		private uint bufferSize = 8096;
-		// Force the messages depite history.
-		public bool flagForce = true;
 		// Local buffer
 		private string currentHistory = string.Empty;
 		// Flag raised when server is found
@@ -59,15 +57,12 @@ namespace HoloFab {
 		// - debug
 		public List<string> debugMessages = new List<string>();
 		// - received data
-		public List<string> dataMessages = new List<string>();
-		// Flag to be raised on data recepcion.
-		public bool flagDataRead;
+		public Queue<string> dataMessages = new Queue<string>();
         
 		public TCPReceive(int _localPort=11111) {
-			this.flagDataRead = true;
 			this.localPort = _localPort;
 			this.debugMessages = new List<string>();
-			this.dataMessages = new List<string>();
+			this.dataMessages = new Queue<string>();
 			this.flagConnectionFound = false;
 			Disconnect();
 		}
@@ -92,15 +87,7 @@ namespace HoloFab {
 				#if DEBUG2
 				DebugUtilities.UniversalDebug(this.sourceName, "Total Data found: " + receiveString, ref this.debugMessages);
 				#endif
-				if ((this.dataMessages.Count == 0) ||
-				    (this.flagForce || (this.dataMessages[this.dataMessages.Count-1] != receiveString))) {
-					this.dataMessages.Add(receiveString);
-					this.flagDataRead = false;
-				} else {
-					#if DEBUG2
-					DebugUtilities.UniversalDebug(this.sourceName, "Message already added.", ref this.debugMessages);
-					#endif
-				}
+				this.dataMessages.Enqueue(receiveString);
 			}
 		}
 		//////////////////////////////////////////////////////////////////////////

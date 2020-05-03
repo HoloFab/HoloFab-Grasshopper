@@ -1,6 +1,6 @@
-﻿#define DEBUG
+﻿// #define DEBUG
 #define DEBUGWARNING
-// #undef DEBUG
+#undef DEBUG
 // #undef DEBUGWARNING
 
 using System;
@@ -10,34 +10,110 @@ using System.Net.Sockets;
 using System.Threading;
 
 using HoloFab;
+using HoloFab.CustomData;
 
 namespace HoloFab {
 	// TCP sender.
 	public class TCPSend {
 		// An IP and a port for TCP communication to send to.
-		private string remoteIP;
+		public string remoteIP;
 		private int remotePort;
         
 		public bool flagSuccess = false;
+		public bool flagConnected;
         
+		// Network Objects:
+		#if WINDOWS_UWP
+		private string sourceName = "TCP Send Interface UWP";
+		#else
+		private string sourceName = "TCP Send Interface";
+		// Connection Object Reference.
 		private TcpClient client;
 		private NetworkStream stream;
+		#endif
+		// History:
+		// - Debug History.
 		public List<string> debugMessages = new List<string>();
-		public bool connected;
-		private string sourceName = "TCP Send Interface";
-
+		// Queuing:
+		// Interface to keep checking queue on background and send it.
+		ThreadInterface sender;
+		// Queue of buffers to send.
+		private Queue<byte[]> sendQueue = new Queue<byte[]>();
+		// Accessor to check if there is data in queue
+		public bool IsNotEmpty {
+			get {
+				return this.sendQueue.Count > 0;
+			}
+		}
+        
 		// Main Constructor
 		public TCPSend(string _remoteIP, int _remotePort=11111) {
 			this.remoteIP = _remoteIP;
 			this.remotePort = _remotePort;
+			this.debugMessages = new List<string>();
+			this.sender = new ThreadInterface();
+			this.sender.threadAction = SendFromQueue;
 			// Reset.
 			Disconnect();
-			this.debugMessages = new List<string>();
 		}
 		// Destructor.
 		~TCPSend() {
 			Disconnect();
 		}
+		////////////////////////////////////////////////////////////////////////
+		// Queue Functions.
+		// Start the thread to send data.
+		private void StartSending(){
+			// if queue not set create it.
+			if (this.sendQueue == null)
+				this.sendQueue = new Queue<byte[]>();
+			// Start the thread.
+			this.sender.Start();
+		}
+		// Disable Sending.
+		public void StopSending() {
+			// TODO: Should we reset queue?
+			// Reset.
+			this.sender.Stop();
+		}
+		// Enqueue data.
+		public void QueueUpData(byte[] newData) {
+			lock (this.sendQueue) {
+				this.sendQueue.Enqueue(newData);
+			}
+		}
+		// Check the queue and try send it.
+		public void SendFromQueue() {
+			try {
+				if (this.IsNotEmpty) {
+					byte[] currentData;
+					lock (this.sendQueue) {
+						currentData = this.sendQueue.Dequeue();
+					}
+					// Peek message to send
+					Send(currentData);
+					//// if no exception caught and data sent successfully - remove from queue.
+					//if (!this.flagSuccess)
+					//	lock (this.sendQueue) {
+					//		this.sendQueue.Enqueue(currentData);
+					//	}
+				}
+			} catch (Exception exception) {
+				#if DEBUG
+				DebugUtilities.UniversalDebug(this.sourceName, "Queue Exception: " + exception.ToString(), ref this.debugMessages);
+				#endif
+				this.flagSuccess = false;
+			}
+		}
+		#if WINDOWS_UWP
+		////////////////////////////////////////////////////////////////////////
+		// Establish Connection
+		public async void Connect() {}
+		// Start a connection and send given byte array.
+		private async void Send(byte[] sendBuffer) {}
+		// Stop Connection.
+		public async void Disconnect() {}
+		#else
 		////////////////////////////////////////////////////////////////////////
 		// Establish Connection
 		public bool Connect() {
@@ -48,11 +124,11 @@ namespace HoloFab {
 				// Open.
 				if (!this.client.ConnectAsync(this.remoteIP, this.remotePort).Wait(2000)) {
 					// connection failure
-					this.connected = false;
+					this.flagConnected = false;
 					return false;
 				}
 				this.stream = this.client.GetStream();
-				this.connected = true;
+				this.flagConnected = true;
 				StartSending();
 				// Acknowledge.
 				#if DEBUG
@@ -64,29 +140,29 @@ namespace HoloFab {
 				#if DEBUG
 				DebugUtilities.UniversalDebug(this.sourceName, "ArgumentNullException: " + exception.ToString(), ref this.debugMessages);
 				#endif
-				this.connected = false;
+				this.flagConnected = false;
 				return false;
 			} catch (SocketException exception) {
 				// Exception.
 				#if DEBUG
 				DebugUtilities.UniversalDebug(this.sourceName, "SocketException: " + exception.ToString(), ref this.debugMessages);
 				#endif
-				this.connected = false;
+				this.flagConnected = false;
 				return false;
 			} catch (Exception exception) {
 				#if DEBUG
 				DebugUtilities.UniversalDebug(this.sourceName, "UnhandledException: " + exception.ToString(), ref this.debugMessages);
 				#endif
-				this.connected = false;
+				this.flagConnected = false;
 				return false;
 			}
 		}
-		////// Start a connection and send given byte array.
+		// Start a connection and send given byte array.
 		private void Send(byte[] sendBuffer) {
 			try {
 				if (!this.client.Connected) {
 					#if DEBUG
-					DebugUtilities.UniversalDebug(this.sourceName, "Client Disconnected!", ref this.debugMessages);
+					DebugUtilities.UniversalDebug(this.sourceName, "Client DisflagConnected!", ref this.debugMessages);
 					#endif
 					this.flagSuccess = false;
 				}
@@ -133,70 +209,9 @@ namespace HoloFab {
 			}
 			StopSending();
 			#if DEBUG
-			DebugUtilities.UniversalDebug(this.sourceName, "Disconnected.", ref this.debugMessages);
+			DebugUtilities.UniversalDebug(this.sourceName, "DisflagConnected.", ref this.debugMessages);
 			#endif
 		}
-		////////////////////////////////////////////////////////////////////////////////////////////
-		// Queue behavior.
-		private Thread sendThread;
-		// Queue of buffers to send.
-		private Queue<byte[]> sendQueue = new Queue<byte[]>();
-		// Accessor to check if there is data in queue
-		public bool IsNotEmpty {
-			get {
-				return this.sendQueue.Count > 0;
-			}
-		}
-		// Enqueue data.
-		public void QueueUpData(byte[] newData) {
-			lock (this.sendQueue) {
-				this.sendQueue.Enqueue(newData);
-			}
-		}
-		// Infinite Loop to continuously check the loop and try send it.
-		public void SendLoop() {
-			while (true) {
-				try {
-					if (this.IsNotEmpty) {
-						lock (this.sendQueue) {
-							// Peek message to send
-							Send(this.sendQueue.Dequeue());
-							//// If no exception caught and data sent successfully - remove from queue.
-							//if (this.flagSuccess)
-							//	this.sendQueue.Dequeue();
-						}
-					}
-				} catch (Exception exception) { 
-					#if DEBUG
-					DebugUtilities.UniversalDebug(this.sourceName, "Queue Exception: " + exception.ToString(), ref this.debugMessages);
-					#endif
-					this.flagSuccess = false;
-				}
-			}
-		}
-		private void StartSending(){
-			// if queue not set create it.
-			if (this.sendQueue == null)
-				this.sendQueue = new Queue<byte[]>();
-			// Start the thread.
-			this.sendThread = new Thread(new ThreadStart(SendLoop));
-			this.sendThread.IsBackground = true;
-			this.sendThread.Start();
-			#if DEBUG
-			DebugUtilities.UniversalDebug(this.sourceName, "Queue Started.", ref this.debugMessages);
-			#endif
-		}
-		// Disable connection.
-		public void StopSending() {
-			// TODO: Should we reset queue?
-			// Reset.
-			if (this.sendThread != null) {
-				this.sendThread.Abort();
-				this.sendThread = null; // Good Practice?
-				#if DEBUG
-				DebugUtilities.UniversalDebug(this.sourceName, "Stopping Thread.", ref this.debugMessages);
-				#endif
-			}
-		}
+		#endif
 	}
 }
