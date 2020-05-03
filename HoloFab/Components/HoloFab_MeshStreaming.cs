@@ -9,6 +9,7 @@ using System.Drawing;
 using Rhino.Geometry;
 using Grasshopper.Kernel;
 using Newtonsoft.Json;
+using System;
 
 using HoloFab.CustomData;
 
@@ -22,7 +23,12 @@ namespace HoloFab {
 		private Color defaultColor = Color.Red;
 		// - component Info
 		// TODO: doesn't seem to be saved
-		public SourceType sourceType;
+		private SourceType sourceType;
+		// - settings
+		// If messages in queues - expire solution after this time.
+		private static int expireDelay = 40;
+		// force messages despite memory or no
+		private bool flagForce = true;
 		// - debugging
 		#if DEBUG
 		private string sourceName = "Mesh Streaming Component";
@@ -42,7 +48,7 @@ namespace HoloFab {
 			Connection connect = null;
 			if (!DA.GetDataList(0, inputMeshes)) return;
 			DA.GetDataList(1, inputColor);
-			if (!DA.GetData(2, ref connect)) return;
+			if (!DA.GetData<Connection>(2, ref connect)) return;
 			// Check inputs.
 			if ((inputColor.Count > 1) && (inputColor.Count != inputMeshes.Count)) {
 				message = (inputColor.Count > inputMeshes.Count) ?
@@ -62,20 +68,20 @@ namespace HoloFab {
 				}
 				// Send mesh data.
 				byte[] bytes = EncodeUtilities.EncodeData("MESHSTREAMING", inputMeshData, out string currentMessage);
-				if (this.lastMessage != currentMessage) {
-					bool success = false;
+				if (this.flagForce || (this.lastMessage != currentMessage)) {
+					//bool success = false;
 					if (this.sourceType == SourceType.TCP) {
-						connect.tcpSender.Send(bytes);
-						success = connect.tcpSender.success;
-						message = connect.tcpSender.debugMessages[connect.tcpSender.debugMessages.Count-1];
+						connect.tcpSender.QueueUpData(bytes);
+						//success = connect.tcpSender.flagSuccess;
+						//message = connect.tcpSender.debugMessages[connect.tcpSender.debugMessages.Count-1];
 					} else {
-						connect.udpSender.Send(bytes);
-						success = connect.udpSender.success;
-						message = connect.udpSender.debugMessages[connect.udpSender.debugMessages.Count-1];
+						connect.udpSender.QueueUpData(bytes);
+						//success = connect.udpSender.flagSuccess;
+						//message = connect.udpSender.debugMessages[connect.udpSender.debugMessages.Count-1];
 					}
-					if (success)
-						this.lastMessage = currentMessage;
-					UniversalDebug(message, (success) ? GH_RuntimeMessageLevel.Remark : GH_RuntimeMessageLevel.Error);
+					//if (success)
+					//	this.lastMessage = currentMessage;
+					//UniversalDebug(message, (success) ? GH_RuntimeMessageLevel.Remark : GH_RuntimeMessageLevel.Error);
 				}
 			} else {
 				this.lastMessage = string.Empty;
@@ -86,6 +92,16 @@ namespace HoloFab {
 			#if DEBUG
 			DA.SetData(0, this.debugMessages[this.debugMessages.Count-1]);
 			#endif
+			
+			// Expire Solution.
+			if ((connect.status) && (connect.PendingMessages)) {
+				GH_Document document = this.OnPingDocument();
+				if (document != null)
+					document.ScheduleSolution(MeshStreaming.expireDelay, ScheduleCallback);
+			}
+		}
+		private void ScheduleCallback(GH_Document document) {
+			ExpireSolution(false);
 		}
 		//////////////////////////////////////////////////////////////////////////
 		/// <summary>
@@ -161,6 +177,26 @@ namespace HoloFab {
 			DebugUtilities.UniversalDebug(this.sourceName, message, ref this.debugMessages);
 			#endif
 			this.AddRuntimeMessage(messageType, message);
+		}
+		////////////////////////////////////////////////////////////////////////
+		// Try to solve the saving of source Type.
+		public override bool Write(GH_IO.Serialization.GH_IWriter writer) {
+			// First add our own field.
+			writer.SetInt32("sourceType", (int)this.sourceType);
+			// Then call the base class implementation.
+			return base.Write(writer);
+		}
+		public override bool Read(GH_IO.Serialization.GH_IReader reader) {
+			// First read our own field.
+			try {
+				this.sourceType = (SourceType)reader.GetInt32("sourceType");
+			}
+			catch {
+				this.sourceType = SourceType.UDP;
+			}
+			UpdateMessage();
+			// Then call the base class implementation.
+			return base.Read(reader);
 		}
 	}
 }

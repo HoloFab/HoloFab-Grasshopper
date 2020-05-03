@@ -20,9 +20,9 @@ namespace HoloFab {
 		private static List<float> currentFloats = new List<float>();
 		// - history
 		private static string lastInputs;
-		private static bool flagProcessed = false;
+		//private static bool flagProcessed = false;
 		// - settings
-		private static int expireDelay = 10;
+		private static int expireDelay = 40;
 		// - debugging
 		#if DEBUG
 		private string sourceName = "UI Receiving Component";
@@ -41,25 +41,15 @@ namespace HoloFab {
 			// Process data.
 			if (connect.status) {
 				// If connection open start acting.
-				if (!UIReceiver.flagProcessed) {
-					UIReceiver.flagProcessed = true;
-					// Send local IPAddress for device to communicate back.
-					byte[] bytes = EncodeUtilities.EncodeData("IPADDRESS", NetworkUtilities.LocalIPAddress(), out string currentMessage);
-					connect.udpSender.Send(bytes);
-					bool success = connect.udpSender.success;
-					UniversalDebug("Sent local IP.");
-				}
-                
 				// Prepare to receive UI data.
 				try {
-					if (!connect.udpReceiver.flagDataRead) {
-						connect.udpReceiver.flagDataRead = true;
-						UIReceiver.currentInput = connect.udpReceiver.dataMessages[connect.udpReceiver.dataMessages.Count - 1];
-						if (UIReceiver.lastInputs != currentInput) {
-							currentInput = EncodeUtilities.StripSplitter(currentInput);
-							UIReceiver.lastInputs = currentInput;
+					if (connect.udpReceiver.dataMessages.Count > 0) {
+						UIReceiver.currentInput = connect.udpReceiver.dataMessages.Peek();
+						UIReceiver.currentInput = EncodeUtilities.StripSplitter(UIReceiver.currentInput);
+						if (UIReceiver.lastInputs != UIReceiver.currentInput) {
+							UIReceiver.lastInputs = UIReceiver.currentInput;
 							UniversalDebug("New Message without Message Splitter removed: " + currentInput);
-							string[] messageComponents = currentInput.Split(new string[] {EncodeUtilities.headerSplitter}, 2, StringSplitOptions.RemoveEmptyEntries);
+							string[] messageComponents = UIReceiver.currentInput.Split(new string[] {EncodeUtilities.headerSplitter}, 2, StringSplitOptions.RemoveEmptyEntries);
 							if (messageComponents.Length > 1) {
 								string header = messageComponents[0], content = messageComponents[1];
 								UniversalDebug("Header: " + header + ", content: " + content);
@@ -70,8 +60,10 @@ namespace HoloFab {
 									UIReceiver.currentInts = new List<int> (data.ints);
 									UIReceiver.currentFloats = new List<float> (data.floats);
 									UniversalDebug("Data Received!");
-								} else
-									UniversalDebug("Header Not Recognized!", GH_RuntimeMessageLevel.Warning);
+									connect.udpReceiver.dataMessages.Dequeue(); // Actually remove from the queue since it has been processed.
+								}
+								// else
+								//	UniversalDebug("Header Not Recognized!", GH_RuntimeMessageLevel.Warning);
 							} else
 								UniversalDebug("Data not Received!", GH_RuntimeMessageLevel.Warning);
 						} else
@@ -82,8 +74,7 @@ namespace HoloFab {
 					UniversalDebug("Error Processing Data.", GH_RuntimeMessageLevel.Error);
 				}
 			} else {
-				// If connection disabled - stop receiving.
-				UIReceiver.flagProcessed = false;
+				// If connection disabled - reset memoty.
 				UIReceiver.lastInputs = string.Empty;
 				UIReceiver.currentBools = new List<bool>();
 				UIReceiver.currentInts = new List<int>();

@@ -18,6 +18,9 @@ using System.Net.Sockets;
 using System.Threading;
 #endif
 
+using HoloFab;
+using HoloFab.CustomData;
+
 namespace HoloFab {
 	// UDP receiver.
 	// TODO:
@@ -25,8 +28,6 @@ namespace HoloFab {
 	public class UDPReceive {
 		// Local Port
 		private int localPort = 8055;
-		// Force the messages depite history.
-		public bool flagForce = true;
         
 		// Network Objects:
 		#if WINDOWS_UWP
@@ -38,43 +39,38 @@ namespace HoloFab {
 		// Connection Object Reference.
 		private UdpClient client;
 		// Thread Object Reference.
-		private Thread receiveThread = null;
+		private ThreadInterface receiver;
 		#endif
 		// History:
 		// - debug
 		public List<string> debugMessages = new List<string>();
 		// - received data
-		public List<string> dataMessages = new List<string>();
+		public Queue<string> dataMessages = new Queue<string>();
+		//public List<string> dataMessages = new List<string>();
 		// - addresses of incomiing connections (corresponding to data)
-		public List<string> connectionHistory = new List<string>();
-		// Flag to be raised on data recepcion.
-		public bool flagDataRead = true;
+		public Queue<string> connectionHistory = new Queue<string>();
+		//public List<string> connectionHistory = new List<string>();
         
 		public Action OnReceive;
         
 		// Constructor.
 		public UDPReceive(int _localPort=8055){
-			this.flagDataRead = true;
 			this.localPort = _localPort;
 			this.debugMessages = new List<string>();
-			this.dataMessages = new List<string>();
-			this.connectionHistory = new List<string>();
+			#if !WINDOWS_UWP
+			this.receiver = new ThreadInterface();
+			this.receiver.threadAction = ReceiveData;
+			#endif
+			this.dataMessages = new Queue<string>();
+			this.connectionHistory = new Queue<string>();
+			//this.dataMessages = new List<string>();
+			//this.connectionHistory = new List<string>();
 			Disconnect();
 		}
 		~UDPReceive(){
 			Disconnect();
 		}
         
-		// Enable connection - if not yet open.
-		public void Connect() {
-			#if WINDOWS_UWP
-			StartReceiving();
-			#else
-			// Create a new thread to receive incoming messages.
-			if (this.receiveThread == null)
-				StartReceiving();
-			#endif
-		}
 		//////////////////////////////////////////////////////////////////////////
 		#if WINDOWS_UWP
 		private async void StartReceiving(){
@@ -92,6 +88,10 @@ namespace HoloFab {
 			#if DEBUG
 			DebugUtilities.UniversalDebug(this.sourceName, "Client receivng thread Started.", ref this.debugMessages);
 			#endif
+		}
+		// Enable Connection
+		public void Connect() {
+			StartReceiving();
 		}
 		// Disable connection.
 		public async void Disconnect() {
@@ -114,42 +114,24 @@ namespace HoloFab {
 				#if DEBUG2
 				DebugUtilities.UniversalDebug(this.sourceName, "Total Data found: " + receiveString, ref this.debugMessages);
 				#endif
-				if ((this.dataMessages.Count == 0) ||
-				    (this.flagForce || (this.dataMessages[this.dataMessages.Count-1] != receiveString))) {
-					this.dataMessages.Add(receiveString);
-					this.connectionHistory.Add(args.RemoteAddress.RawName);
-					this.flagDataRead = false;
-					if (OnReceive != null)
-						OnReceive();
-				} else {
-					#if DEBUG2
-					DebugUtilities.UniversalDebug(this.sourceName, "Message already added.", ref this.debugMessages);
-					#endif
-				}
+				this.dataMessages.Enqueue(receiveString);
+				this.connectionHistory.Enqueue(args.RemoteAddress.RawName);
+				if (OnReceive != null)
+					OnReceive();
 			}
 		}
 		//////////////////////////////////////////////////////////////////////////
 		#else
-		private void StartReceiving(){
+		// Enable Connection
+		public void Connect(){
+			Disconnect();
+			this.client = new UdpClient(this.localPort);
 			// Start the thread.
-			this.receiveThread = new Thread(new ThreadStart(ReceiveData));
-			this.receiveThread.IsBackground = true;
-			this.receiveThread.Start();
-			#if DEBUG
-			DebugUtilities.UniversalDebug(this.sourceName, "Client receivng thread Started.", ref this.debugMessages);
-			#endif
+			this.receiver.Start();
 		}
 		// Disable connection.
 		public void Disconnect() {
 			// Reset.
-			if (this.receiveThread != null) {
-				this.receiveThread.Abort();
-				this.receiveThread = null; // Good Practice?
-				this.debugMessages.Add("UDPReceive: Stopping Thread.");
-				#if DEBUG
-				DebugUtilities.UniversalDebug(this.sourceName, "Stopping Connection Reception Thread.", ref this.debugMessages);
-				#endif
-			}
 			if (this.client != null) {
 				this.client.Close();
 				this.client = null; // Good Practice?
@@ -157,40 +139,29 @@ namespace HoloFab {
 				DebugUtilities.UniversalDebug(this.sourceName, "Stopping Client.", ref this.debugMessages);
 				#endif
 			}
+			// Reset.
+			this.receiver.Stop();
 		}
 		// Constantly check for new messages on given port.
-		private void ReceiveData(){
-			// Open.
-			this.client = new UdpClient(this.localPort);
+		private void ReceiveData() {
 			IPEndPoint anyIP = new IPEndPoint(IPAddress.Any, 0);
-			// Infinite loop.
+			byte[] data;
+			string receiveString;
 			try {
-				byte[] data;
-				string receiveString;
-				while (true) {
-					// Receive Bytes.
-					data = client.Receive(ref anyIP);
-					if (data.Length > 0) {
-						// If buffer not empty - decode it.
-						receiveString = EncodeUtilities.DecodeData(data);
-						// If string not empty and not read yet - react to it.
-						if (!string.IsNullOrEmpty(receiveString)) {
-							#if DEBUG2
-							DebugUtilities.UniversalDebug(this.sourceName, "Total Data found: " + receiveString, ref this.debugMessages);
-							#endif
-							if ((this.dataMessages.Count == 0) ||
-							    (this.flagForce || (this.dataMessages[this.dataMessages.Count-1] != receiveString))) {
-								this.dataMessages.Add(receiveString);
-								this.connectionHistory.Add(anyIP.Address.ToString());
-								this.flagDataRead = false;
-								if (OnReceive != null)
-									OnReceive();
-							} else {
-								#if DEBUG2
-								DebugUtilities.UniversalDebug(this.sourceName, "Message already added.", ref this.debugMessages);
-								#endif
-							}
-						}
+				// Receive Bytes.
+				data = this.client.Receive(ref anyIP);
+				if (data.Length > 0) {
+					// If buffer not empty - decode it.
+					receiveString = EncodeUtilities.DecodeData(data);
+					// If string not empty and not read yet - react to it.
+					if (!string.IsNullOrEmpty(receiveString)) {
+						#if DEBUG2
+						DebugUtilities.UniversalDebug(this.sourceName, "Total Data found: " + receiveString, ref this.debugMessages);
+						#endif
+						this.dataMessages.Enqueue(receiveString);
+						this.connectionHistory.Enqueue(anyIP.Address.ToString());
+						if (OnReceive != null)
+							OnReceive();
 					}
 				}
 			} catch (SocketException exception) {
@@ -203,8 +174,6 @@ namespace HoloFab {
 				#if DEBUGWARNING
 				DebugUtilities.UniversalWarning(this.sourceName, "Exception: " + exception.ToString(), ref this.debugMessages);
 				#endif
-			} finally {
-				this.Disconnect();
 			}
 		}
 		#endif

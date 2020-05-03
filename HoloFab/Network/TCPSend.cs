@@ -1,36 +1,119 @@
-﻿using System;
+﻿// #define DEBUG
+#define DEBUGWARNING
+#undef DEBUG
+// #undef DEBUGWARNING
+
+using System;
 using System.Collections.Generic;
 
 using System.Net.Sockets;
+using System.Threading;
 
 using HoloFab;
+using HoloFab.CustomData;
 
 namespace HoloFab {
 	// TCP sender.
 	public class TCPSend {
 		// An IP and a port for TCP communication to send to.
-		private string remoteIP;
+		public string remoteIP;
 		private int remotePort;
         
-		public bool success = false;
+		public bool flagSuccess = false;
+		public bool flagConnected;
         
+		// Network Objects:
+		#if WINDOWS_UWP
+		private string sourceName = "TCP Send Interface UWP";
+		#else
+		private string sourceName = "TCP Send Interface";
+		// Connection Object Reference.
 		private TcpClient client;
 		private NetworkStream stream;
+		#endif
+		// History:
+		// - Debug History.
 		public List<string> debugMessages = new List<string>();
-		public bool connected;
+		// Queuing:
+		// Interface to keep checking queue on background and send it.
+		ThreadInterface sender;
+		// Queue of buffers to send.
+		private Queue<byte[]> sendQueue = new Queue<byte[]>();
+		// Accessor to check if there is data in queue
+		public bool IsNotEmpty {
+			get {
+				return this.sendQueue.Count > 0;
+			}
+		}
         
 		// Main Constructor
 		public TCPSend(string _remoteIP, int _remotePort=11111) {
 			this.remoteIP = _remoteIP;
 			this.remotePort = _remotePort;
+			this.debugMessages = new List<string>();
+			this.sender = new ThreadInterface();
+			this.sender.threadAction = SendFromQueue;
 			// Reset.
 			Disconnect();
-			this.debugMessages = new List<string>();
 		}
 		// Destructor.
 		~TCPSend() {
 			Disconnect();
 		}
+		////////////////////////////////////////////////////////////////////////
+		// Queue Functions.
+		// Start the thread to send data.
+		private void StartSending(){
+			// if queue not set create it.
+			if (this.sendQueue == null)
+				this.sendQueue = new Queue<byte[]>();
+			// Start the thread.
+			this.sender.Start();
+		}
+		// Disable Sending.
+		public void StopSending() {
+			// TODO: Should we reset queue?
+			// Reset.
+			this.sender.Stop();
+		}
+		// Enqueue data.
+		public void QueueUpData(byte[] newData) {
+			lock (this.sendQueue) {
+				this.sendQueue.Enqueue(newData);
+			}
+		}
+		// Check the queue and try send it.
+		public void SendFromQueue() {
+			try {
+				if (this.IsNotEmpty) {
+					byte[] currentData;
+					lock (this.sendQueue) {
+						currentData = this.sendQueue.Dequeue();
+					}
+					// Peek message to send
+					Send(currentData);
+					//// if no exception caught and data sent successfully - remove from queue.
+					//if (!this.flagSuccess)
+					//	lock (this.sendQueue) {
+					//		this.sendQueue.Enqueue(currentData);
+					//	}
+				}
+			} catch (Exception exception) {
+				#if DEBUG
+				DebugUtilities.UniversalDebug(this.sourceName, "Queue Exception: " + exception.ToString(), ref this.debugMessages);
+				#endif
+				this.flagSuccess = false;
+			}
+		}
+		#if WINDOWS_UWP
+		////////////////////////////////////////////////////////////////////////
+		// Establish Connection
+		public async void Connect() {}
+		// Start a connection and send given byte array.
+		private async void Send(byte[] sendBuffer) {}
+		// Stop Connection.
+		public async void Disconnect() {}
+		#else
 		////////////////////////////////////////////////////////////////////////
 		// Establish Connection
 		public bool Connect() {
@@ -41,58 +124,77 @@ namespace HoloFab {
 				// Open.
 				if (!this.client.ConnectAsync(this.remoteIP, this.remotePort).Wait(2000)) {
 					// connection failure
-					this.connected = false;
+					this.flagConnected = false;
 					return false;
 				}
 				this.stream = this.client.GetStream();
-				this.connected = true;
+				this.flagConnected = true;
+				StartSending();
 				// Acknowledge.
-				this.debugMessages.Add("TCPSend: Connection Stablished!");
+				#if DEBUG
+				DebugUtilities.UniversalDebug(this.sourceName, "Connection Stablished!", ref this.debugMessages);
+				#endif
 				return true;
 			} catch (ArgumentNullException exception) {
 				// Exception.
-				this.debugMessages.Add("TCPSend: ArgumentNullException: " + exception.ToString());
-				this.connected = false;
+				#if DEBUG
+				DebugUtilities.UniversalDebug(this.sourceName, "ArgumentNullException: " + exception.ToString(), ref this.debugMessages);
+				#endif
+				this.flagConnected = false;
 				return false;
 			} catch (SocketException exception) {
 				// Exception.
-				this.debugMessages.Add("TCPSend: SocketException: " + exception.ToString());
-				this.connected = false;
+				#if DEBUG
+				DebugUtilities.UniversalDebug(this.sourceName, "SocketException: " + exception.ToString(), ref this.debugMessages);
+				#endif
+				this.flagConnected = false;
 				return false;
 			} catch (Exception exception) {
-				this.debugMessages.Add("TCPSend: UnhandledException: " + exception.ToString());
-				this.connected = false;
+				#if DEBUG
+				DebugUtilities.UniversalDebug(this.sourceName, "UnhandledException: " + exception.ToString(), ref this.debugMessages);
+				#endif
+				this.flagConnected = false;
 				return false;
 			}
 		}
-		////// Start a connection and send given byte array.
-		public void Send(byte[] sendBuffer) {
+		// Start a connection and send given byte array.
+		private void Send(byte[] sendBuffer) {
 			try {
 				if (!this.client.Connected) {
-					this.debugMessages.Add("TCPSend: Client Disconnected!");
-					success = false;
+					#if DEBUG
+					DebugUtilities.UniversalDebug(this.sourceName, "Client DisflagConnected!", ref this.debugMessages);
+					#endif
+					this.flagSuccess = false;
 				}
                 
 				// Write.
 				this.stream.Write(sendBuffer, 0, sendBuffer.Length);
 				// Acknowledge.
-				this.debugMessages.Add("TCPSend: Data Sent!");
-				success = true;
+				#if DEBUG
+				DebugUtilities.UniversalDebug(this.sourceName, "Data Sent!", ref this.debugMessages);
+				#endif
+				this.flagSuccess = true;
 				return;
 			} catch (ArgumentNullException exception) {
 				// Exception.
-				this.debugMessages.Add("TCPSend: ArgumentNullException: " + exception.ToString());
-				success = false;
+				#if DEBUG
+				DebugUtilities.UniversalDebug(this.sourceName, "ArgumentNullException: " + exception.ToString(), ref this.debugMessages);
+				#endif
+				this.flagSuccess = false;
 			} catch (SocketException exception) {
 				// Exception.
-				this.debugMessages.Add("TCPSend: SocketException: " + exception.ToString());
-				success = false;
+				#if DEBUG
+				DebugUtilities.UniversalDebug(this.sourceName, "SocketException: " + exception.ToString(), ref this.debugMessages);
+				#endif
+				this.flagSuccess = false;
 			} catch (Exception exception) {
 				// Exception.
-				this.debugMessages.Add("TCPSend: Exception: " + exception.ToString());
-				success = false;
+				#if DEBUG
+				DebugUtilities.UniversalDebug(this.sourceName, "Exception: " + exception.ToString(), ref this.debugMessages);
+				#endif
+				this.flagSuccess = false;
 			}
-			success = false;
+			this.flagSuccess = false;
 		}
 		// Stop Connection.
 		public void Disconnect() {
@@ -105,6 +207,11 @@ namespace HoloFab {
 				this.stream.Close();
 				this.stream = null; // Good Practice?
 			}
+			StopSending();
+			#if DEBUG
+			DebugUtilities.UniversalDebug(this.sourceName, "DisflagConnected.", ref this.debugMessages);
+			#endif
 		}
+		#endif
 	}
 }

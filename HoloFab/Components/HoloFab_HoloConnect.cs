@@ -23,6 +23,8 @@ namespace HoloFab {
 		// - default settings
 		private string defaultIP = "127.0.0.1";
 		// - settings
+		// If messages in queues - expire solution after this time.
+		//private static int expireDelay = 40;
 		public bool status = false;
 		private Connection connect;
 		public static FindServer deviceFinder;
@@ -41,18 +43,24 @@ namespace HoloFab {
 				HoloConnect.deviceFinder = new FindServer();
 				HoloConnect.deviceFinder.StartScanning();
 			}
-			HoloConnect.deviceFinder.RefreshList();
 			// Get inputs.
 			string remoteIP = this.defaultIP;
 			if (!DA.GetData(0, ref remoteIP)) return;
 			//////////////////////////////////////////////////////
-			if ((this.connect == null) || (this.connect.remoteIP != remoteIP))
+			if (this.connect == null) // New Connection.
 				this.connect = new Connection(remoteIP);
-            
+			else if (this.connect.remoteIP != remoteIP) {
+				// If IP Changed first Disconnect the old one.
+				this.connect.Disconnect();
+				this.connect = new Connection(remoteIP);
+			}
+
 			this.connect.status = this.status;
 			if (this.status) {
 				// Start connections
 				bool success = this.connect.Connect();
+				if (success)
+					this.connect.TransmitIP();
 				string message = (success) ? "Connection established." : "Connection failed, please check your network connection and try again.";
 				UniversalDebug(message, (success) ? GH_RuntimeMessageLevel.Remark : GH_RuntimeMessageLevel.Error);
 			} else {
@@ -64,6 +72,16 @@ namespace HoloFab {
 			#if DEBUG
 			DA.SetData(1, this.debugMessages[this.debugMessages.Count-1]);
 			#endif
+			
+		//	// Expire Solution.
+		//	if ((connect.status) && (connect.PendingMessages)) {
+		//		GH_Document document = this.OnPingDocument();
+		//		if (document != null)
+		//			document.ScheduleSolution(HoloConnect.expireDelay, ScheduleCallback);
+		//	}
+		//}
+		//private void ScheduleCallback(GH_Document document) {
+		//	ExpireSolution(false);
 		}
 		//////////////////////////////////////////////////////////////////////////
 		/// <summary>

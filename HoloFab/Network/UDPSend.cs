@@ -1,6 +1,6 @@
-#define DEBUG
+// #define DEBUG
 #define DEBUGWARNING
-// #undef DEBUG
+#undef DEBUG
 // #undef DEBUGWARNING
 
 using System;
@@ -10,46 +10,117 @@ using System.Collections.Generic;
 using Windows.Networking;
 using Windows.Networking.Sockets;
 using Windows.Storage.Streams;
+using System.Threading;
+using System.Threading.Tasks;
 #else
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 #endif
+
+using HoloFab.CustomData;
 
 namespace HoloFab {
 	// UDP sender.
 	public class UDPSend {
 		// An IP and a port for UDP communication to send to.
-		private string remoteIP;
+		public string remoteIP;
 		private int remotePort;
         
-		public bool success = false;
+		public bool flagSuccess = false;
         
 		// Network Objects:
 		#if WINDOWS_UWP
 		private string sourceName = "UDP Send Interface UWP";
 		// Connection Object Reference.
 		private DatagramSocket client;
-		private string broadcastAddress = "255.255.255.255";
+		private static string broadcastAddress = "255.255.255.255";
 		#else
 		private string sourceName = "UDP Send Interface";
 		// Connection Object Reference.
 		private UdpClient client;
 		#endif
-		// History:
-		// - Debug History.
 		public List<string> debugMessages = new List<string>();
+		// Queuing:
+		// Interface to keep checking queue on background and send it.
+		private ThreadInterface sender;
+		// Queue of buffers to send.
+		private Queue<byte[]> sendQueue = new Queue<byte[]>();
+		// Accessor to check if there is data in queue
+		public bool IsNotEmpty {
+			get {
+				return this.sendQueue.Count > 0;
+			}
+		}
         
 		// Constructor.
 		public UDPSend(string _remoteIP, int _remotePort=12121){
 			this.remoteIP = _remoteIP;
 			this.remotePort = _remotePort;
 			this.debugMessages = new List<string>();
+			this.sender = new ThreadInterface();
+			this.sender.threadAction = SendFromQueue;
+		}
+		~UDPSend() {
+			Disconnect();
 		}
         
+		public void Connect() {
+			StartSending();
+		}
+		public void Disconnect() {
+			StopSending();
+		}
+		////////////////////////////////////////////////////////////////////////
+		// Queue Functions.
+		// Start the thread to send data.
+		private void StartSending(){
+			// if queue not set create it.
+			if (this.sendQueue == null)
+				this.sendQueue = new Queue<byte[]>();
+			// Start the thread.
+			this.sender.Start();
+		}
+		// Disable Sending.
+		public void StopSending() {
+			// TODO: Should we reset queue?
+			// Reset.
+			this.sender.Stop();
+		}
+		// Enqueue data.
+		public void QueueUpData(byte[] newData) {
+			lock (this.sendQueue) {
+				this.sendQueue.Enqueue(newData);
+			}
+		}
+		// Check the queue and try send it.
+		private void SendFromQueue() {
+			try {
+				if (this.IsNotEmpty) {
+					byte[] currentData;
+					lock (this.sendQueue) {
+						currentData = this.sendQueue.Dequeue();
+					}
+					// Peek message to send
+					Send(currentData);
+					//// if no exception caught and data sent successfully - remove from queue.
+					//if (!this.flagSuccess)
+					//	lock (this.sendQueue) {
+					//		this.sendQueue.Enqueue(currentData);
+					//	}
+				}
+			} catch (Exception exception) {
+				#if DEBUG
+				DebugUtilities.UniversalDebug(this.sourceName, "Queue Exception: " + exception.ToString(), ref this.debugMessages);
+				#endif
+				this.flagSuccess = false;
+			}
+		}
+		////////////////////////////////////////////////////////////////////////
 		#if WINDOWS_UWP
 		// Start a connection and send given byte array.
-		public async void Send(byte[] sendBuffer) {
-			this.success = false;
+		private async void Send(byte[] sendBuffer) {
+			this.flagSuccess = false;
 			// Stop client if set previously.
 			if (this.client != null) {
 				this.client.Dispose();
@@ -73,7 +144,7 @@ namespace HoloFab {
 				#if DEBUG
 				DebugUtilities.UniversalDebug(this.sourceName, "Data Sent!", ref this.debugMessages);
 				#endif
-				this.success = true;
+				this.flagSuccess = true;
 				return;
 			} catch (Exception exception) {
 				// Exception.
@@ -83,7 +154,7 @@ namespace HoloFab {
 			}
 		}
 		// Broadcast Message to everyone.
-		public void Broadcast(byte[] sendBuffer) {
+		public async void Broadcast(byte[] sendBuffer) {
 			// Reset.
 			if (this.client != null) {
 				this.client.Dispose();
@@ -106,7 +177,7 @@ namespace HoloFab {
 				#if DEBUG
 				DebugUtilities.UniversalDebug(this.sourceName, "Broadcast Sent!", ref this.debugMessages);
 				#endif
-				this.success = true;
+				this.flagSuccess = true;
 				return;
 			} catch (Exception exception) {
 				// Exception.
@@ -116,9 +187,10 @@ namespace HoloFab {
 			}
 		}
 		#else
+		////////////////////////////////////////////////////////////////////////
 		// Start a connection and send given byte array.
-		public void Send(byte[] sendBuffer) {
-			this.success = false;
+		private async void Send(byte[] sendBuffer) {
+			this.flagSuccess = false;
 			// Reset.
 			if (this.client != null) {
 				this.client.Close();
@@ -135,7 +207,7 @@ namespace HoloFab {
 				#if DEBUG
 				DebugUtilities.UniversalDebug(this.sourceName, "Data Sent!", ref this.debugMessages);
 				#endif
-				this.success = true;
+				this.flagSuccess = true;
 				return;
 			} catch (Exception exception) {
 				// Exception.
@@ -162,7 +234,7 @@ namespace HoloFab {
 				#if DEBUG
 				DebugUtilities.UniversalDebug(this.sourceName, "Broadcast Sent!", ref this.debugMessages);
 				#endif
-				this.success = true;
+				this.flagSuccess = true;
 				return;
 			} catch (Exception exception) {
 				// Exception.
